@@ -3888,5 +3888,67 @@ const oUE=updEnemy;updEnemy=function(e){const pst=e.st;const r=oUE(e);if(!e||e.s
 if(Snd&&Snd.sfx){const oS=Snd.sfx.bind(Snd);let last='',lastT=0;Snd.sfx=function(n,...a){if((n==='punch'||n==='kick')&&n===last&&G.t-lastT<4)return;last=n;lastT=G.t;return oS(n,...a)}}
 })();
 
+</script>
+<script>
+/* ===== AI2: devriye, görüş/duyma, alarm, takipten vazgeçme, daha zorlayıcı dövüş ===== */
+const AI2={
+ ok(e){const d=e.d||{};return !e.boss&&!d.fly&&!d.dummy&&!d.mb&&!e.arena},
+ los(e){const p=P,y=Math.min(e.y,p.y)-28,n=Math.ceil(Math.abs(p.x-e.x)/14);for(let i=1;i<n;i++){const x=e.x+(p.x-e.x)*i/n;if(solidAt(x,y))return false}return true},
+ sense(e){const p=P;if(!p||p.st==='dead')return false;const dx=p.x-e.x,ad=Math.abs(dx),dy=Math.abs(p.y-e.y),front=dx*e.face>0;
+  if(dy<60&&((front&&ad<175)||ad<50)&&this.los(e))return true;
+  if(p.st==='atk'&&ad<115&&dy<80)return true;                 // gürültü: yakında dövüş
+  return false},
+ alert(e,delay,call){if(e.st!=='pat'&&e.st!=='ret')return;e.st='alert';e.alT=delay;e._pw=0;e.face=Math.sign(P.x-e.x)||e.face;
+  e.alM=delay;if(call){Snd.sfx('tele');for(const o of E)if(o!==e&&o.st!=='dead'&&(o.st==='pat'||o.st==='ret')&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<70)this.alert(o,delay+6+((Math.random()*8)|0),false)}},
+ walkable(e,s){return supportAt(e.x+s*12,e.y)&&!wallAt(e.x+s*10,e.y-8)&&!solidAt(e.x+s*10,e.y-30)},
+ patrol(e){const d=e.d;if(this.sense(e)){this.alert(e,/fast|leaper/.test(e.type||'')?8:14,true);return}
+  if(e.pw>0){e.pw--;e._pw=0;if(e.pw===((e.pwM/2)|0))e.face=-e.face;if(e.pw===0)e.face=e.pdir;return}
+  const tx=e.home+e.pdir*e.pR;e.face=e.pdir;
+  if((tx-e.x)*e.pdir<=1||!this.walkable(e,e.pdir)){e.pdir=-e.pdir;e.pwM=e.pw=50+((Math.random()*45)|0);e._pw=0;return}
+  e._pw=1;emove(e,e.pdir*d.spd*.45)},
+ ret(e){const d=e.d;if(this.sense(e)){this.alert(e,10,true);return}const s=Math.sign(e.home-e.x);
+  if(Math.abs(e.home-e.x)<3||!this.walkable(e,s)){e.st='pat';e.home=e.x;e.pw=e.pwM=40;e._pw=0;return}e.face=s;e._pw=1;emove(e,s*d.spd*.6)},
+ gap(e,s){if(supportAt(e.x+s*13,e.y))return 0;for(let w=8;w<=44;w+=4){if(supportAt(e.x+s*(13+w),e.y)&&!wallAt(e.x+s*(13+w),e.y))return w}return 0},
+ hop(e,s){e.hop=1;e.air=true;e.on=false;e.y-=1;e.vy=-4.6;e.vx=s*2.1;e.face=s;e.jug=0},
+ flankOK(e,dir){const p=P;if(G._flk&&G._flk!==e&&G._flk.st!=='dead'&&G._flk.flank)return false;
+  const tx=p.x+dir*36;if(!supportAt(tx,p.y)||wallAt(tx,p.y-8)||Math.abs(p.y-e.y)>20)return false;
+  return E.some(o=>o!==e&&o.st!=='dead'&&!o.boss&&Math.sign(p.x-o.x)===dir&&Math.abs(p.x-o.x)<Math.abs(p.x-e.x))}
+};
+(()=>{
+ const oUE=updEnemy;updEnemy=function(e){
+  if(e&&e.st==='idle'&&!e._pi&&AI2.ok(e)){e._pi=1;e.home=e.x;e.pR=36+((Math.random()*34)|0);e.pdir=Math.random()<.5?-1:1;e.pw=e.pwM=20+((Math.random()*40)|0);e.st='pat';e.face=e.pdir}
+  const pst=e.st,pcd=e.cd,wasHop=e.hop&&e.air;const r=oUE(e);
+  if(wasHop&&!e.air){e.hop=0;e.down=0;e.stun=0;e.vx=0;FX2.puff&&FX2.puff(e.x,e.y,1,.3,.2,.9)}
+  if(!e||e.st==='dead'||e.boss||(e.d&&e.d.fly))return r;
+  const p=P,busy=e.stun>0||e.down>0||e.air||!e.on;
+  // vurulan/devrilen devriye düşmanı anında uyanır
+  if(busy&&(e.st==='pat'||e.st==='alert'||e.st==='ret')){e.st='chase';e._pw=0;return r}
+  if(busy||!p||p.st==='dead'||G.scene!=='play'||(typeof FIN!=='undefined'&&FIN.on))return r;
+  if(e.st==='pat'){AI2.patrol(e);return r}
+  if(e.st==='ret'){AI2.ret(e);return r}
+  if(e.st==='alert'){e._pw=0;e.face=Math.sign(p.x-e.x)||e.face;if(--e.alT<=0){e.st='chase';e.cd=Math.max(e.cd,6)}return r}
+  e._pw=0;if(e.d.dummy)return r;
+  const dx=p.x-e.x,ad=Math.abs(dx),dir=Math.sign(dx)||1,dy=Math.abs(p.y-e.y);
+  // saldırı sonrası bekleme süresi daha kısa
+  if(pst==='act'&&e.st==='rec')e.cd=Math.round(e.cd*.75);
+  if(e.st==='chase'){
+   // takipten vazgeçme (yalnızca devriye düşmanları)
+   if(e._pi){if(ad>300||dy>110||(ad>140&&e.t%6===0&&!AI2.los(e)&&(e._nl=1))||(e._nl&&ad>140))e.lost=(e.lost||0)+1;else{e.lost=0;e._nl=0}if(e._nl&&e.t%6===0&&AI2.los(e))e._nl=0;if(e.lost>150){e.lost=0;e.st='ret';popup('?',e.x,e.y-56,'#ccc');return r}}
+   // kaçınma: oyuncu önünde saldırıya başlarken geri sekme
+   if(p.st==='atk'&&p.stT<=1&&ad<46&&dx*e.face>0&&!e.d.ranged&&/fast|counter|leaper|spear/.test(e.type||'')&&Math.random()<.25){e.backT=12;e.cd=Math.max(e.cd,4)}
+   // mesafe koruma: beklerken oyuncunun dibine yapışma
+   else if(e.cd>8&&!e.d.ranged&&ad<(e.d.rng||30)-8&&!(e.backT>0)&&Math.random()<.04)e.backT=8;
+   // küçük çukurların üzerinden zıplama
+   if(!e.d.ranged&&ad>(e.d.rng||24)&&ad<160&&Math.abs(p.y-e.y)<24&&e.cd<=20&&!(e.backT>0)){const w=AI2.gap(e,dir);if(w){AI2.hop(e,dir);return r}}
+   // kuşatma: sırasını bekleyen düşman oyuncunun arkasına dolanır
+   if(!e.d.ranged&&!e.flank&&ad<110&&!tokenFree()&&e.cd<=30&&Math.random()<.02&&AI2.flankOK(e,dir)){e.flank=dir;G._flk=e}
+   if(e.flank){if(dx*e.flank<-30||!AI2.walkable(e,e.flank)||ad>160){e.flank=0;e.face=Math.sign(p.x-e.x)||1}else{emove(e,e.flank*e.d.spd*1.15);e.face=e.flank}}
+  }else e.flank=0;
+  return r};
+ const oCH=Combat.hit;Combat.hit=function(e){if(e)e.hop=0;return oCH.apply(this,arguments)};
+ // devriye yürüyüşü için yürüme pozu
+ const oDE=drawEnemy;drawEnemy=function(e){if(e&&e.hop&&e.air&&e.st!=='dead'){e.air=false;const s0=e.st;e.st='chase';try{oDE(e)}finally{e.air=true;e.st=s0}return}if(e&&(e.st==='pat'||e.st==='alert'||e.st==='ret')){const s=e.st;e.st=e._pw?'chase':'idle';try{oDE(e)}finally{e.st=s}if(s==='alert'){const sc=(e.d.s||1),y=Math.round(e.y-58*sc-(e.alT>(e.alM||14)-4?3:0)),x=Math.round(e.x);R(x-5,y-1,10,15,'#000');R(x-4,y,8,13,'#f4e8d0');R(x-1,y+2,2,6,'#d01818');R(x-1,y+9,2,2,'#d01818')}return}return oDE(e)};
+})();
+
 </script></body></html>
 
