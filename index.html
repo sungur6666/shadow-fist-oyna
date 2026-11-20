@@ -4271,5 +4271,20 @@ MB_LINES.mb_yun=['Gölgelerin arasında yelpazem açılır. Kai, sen de hazır m
 })();
 
 </script>
+<script>
+/* Yetenek harcama (Ustalık Ağacı) ve Stiller ekranı yalnızca Ki Taşı başında açılır */
+(()=>{
+ const atKi=()=>G.mode!=='story'||(P&&OBJS.some(o=>o.k==='K'&&Math.abs(o.x+8-P.x)<44&&Math.abs(o.y-P.y)<40));
+ window.KIGATE={atKi};
+ const msg=()=>{toast('Yetenekler ve stiller yalnızca Ki Taşı başında açılır');Snd.sfx('ui')};
+ const oUP=updatePlay;updatePlay=function(){
+  if(G.mode==='story'&&!atKi()){if(pressed.tree){pressed.tree=false;msg()}if(pressed.styles){pressed.styles=false;msg()}}
+  return oUP.apply(this,arguments)};
+ const oUM=updateMenus;updateMenus=function(){const r=oUM.apply(this,arguments);
+  if(G.mode==='story'&&!atKi()&&(G.scene==='tree'||G.scene==='styles')&&G.ret==='pause'){G.scene='pause';msg()}
+  return r};
+})();
+
+</script>
 </body></html>
 
