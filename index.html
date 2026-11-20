@@ -4095,7 +4095,65 @@ const LAMP={
   R(x-8,y-13,17,1,`rgba(${rgb},.95)`);lFlame(x-4,y-13,i,rgb,true);lFlame(x+1,y-13,i+4,rgb,true);lFlame(x+5,y-13,i+9,rgb,false);
   for(let k=0;k<3;k++){const ph=(t*.8+k*23+i*11)%40,ex=x+Math.round(Math.sin(k*2.1+t*.05)*6),ey=y-18-ph;R(ex,ey,1,1,`rgba(255,${150+k*30},60,${1-ph/40})`)} // kıvılcım
   lGlow(x+.5,y-17,12,rgb,.42*f)},
- draw(x,y,i){const th=(ROOM&&ROOM.theme)||'school',fn=this[th]&&th!=='rgb'&&th!=='draw'?th:'school',rgb=this.rgb[th]||this.rgb.school,t=G.t,f=.85+Math.sin(t*.13+i*1.7)*.09+Math.sin(t*.41+i)*.05;
+
+ // OKUL iç mekân: ahşap çerçeveli kâğıt zemin lambası (andon)
+ andon(x,y,i,rgb,f,t){const wd='#3e2614',wl='#6a4426',pp=`rgba(${rgb},${.55+.3*f})`;
+  this.shadow(x,y,8);lGlow(x+.5,y-14,36,rgb,.28*f);
+  R(x-7,y-3,2,3,wd);R(x+6,y-3,2,3,wd);R(x-7,y-4,15,1,wd);                                 // ayaklar
+  R(x-6,y-22,13,18,pp);R(x-3,y-19,7,12,'rgba(255,245,215,.55)');                          // kâğıt gövde
+  R(x-7,y-23,15,2,wd);R(x-7,y-23,15,1,wl);R(x-7,y-22,1,19,wd);R(x+7,y-22,1,19,wd);R(x,y-22,1,18,wd);R(x-6,y-13,13,1,wd); // çerçeve
+  R(x-5,y-26,11,3,wd);R(x-5,y-26,11,1,wl);R(x-1,y-27,3,1,wl);                              // kapak + tutamak
+  lGlow(x+.5,y-14,9,rgb,.35*f)},
+ // OKUL eğitim salonu: kırmızı laklı, altın süslü salon feneri
+ hall(x,y,i,rgb,f,t){const rd='#6a1410',rm='#9a2218',rl='#c43a26',gd='#c8a040',gl='#f0d070',bk='#1e0c0a';
+  this.shadow(x,y,9);lGlow(x+.5,y-30,42,rgb,.28*f);
+  R(x-7,y-3,15,3,bk);R(x-6,y-5,13,2,gd);R(x-2,y-20,5,15,rm);R(x-2,y-20,1,15,rl);R(x+2,y-20,1,15,rd);R(x-3,y-12,7,1,gd); // lake sütun
+  R(x-6,y-23,13,3,rm);R(x-6,y-23,13,1,gd);
+  R(x-5,y-35,11,12,rd);R(x-4,y-34,9,10,`rgba(${rgb},${.6+.3*f})`);lFlame(x,y-25,i,rgb,false);R(x,y-34,1,10,rd);R(x-4,y-30,9,1,rd);
+  R(x-8,y-38,17,3,bk);R(x-8,y-38,17,1,gd);R(x-9,y-36,2,1,gl);R(x+8,y-36,2,1,gl);R(x-4,y-40,9,2,bk);R(x-1,y-43,3,3,gd);R(x,y-44,1,1,gl);
+  R(x-7,y-35,1,4,gd);R(x+7,y-35,1,4,gd);R(x-7,y-31,1,2,'#d02020');R(x+7,y-31,1,2,'#d02020');   // püsküller
+  lGlow(x+.5,y-29,10,rgb,.4*f)},
+ // OKUL çan kulesi: çan biçimli bronz fener
+ tower(x,y,i,rgb,f,t){const bd='#4a3014',bm='#7a5224',bl='#b07c3a',bh='#e0b060',st='#46424e';
+  this.shadow(x,y,9);lGlow(x+.5,y-24,40,rgb,.27*f);
+  R(x-8,y-3,17,3,st);R(x-1,y-14,3,11,bm);R(x-1,y-14,1,11,bl);R(x-4,y-15,9,2,bm);R(x-4,y-15,9,1,bh);
+  R(x-3,y-29,7,2,bm);R(x-4,y-27,9,3,bm);R(x-5,y-24,11,4,bm);R(x-6,y-20,13,3,bm);R(x-7,y-17,15,2,bd); // çan gövde
+  R(x-5,y-24,1,7,bl);R(x-4,y-27,1,3,bl);R(x+5,y-24,1,7,bd);R(x-6,y-19,13,1,bh);
+  R(x-3,y-23,7,5,`rgba(${rgb},${.55+.35*f})`);lFlame(x,y-18,i,rgb,false);R(x-1,y-23,1,5,bm);R(x+1,y-23,1,5,bm);
+  R(x-1,y-32,3,3,bm);R(x-1,y-32,1,3,bh);R(x,y-34,1,2,bh);
+  lGlow(x+.5,y-21,10,rgb,.38*f)},
+ // OKUL depo: demir fırtına feneri
+ storm(x,y,i,rgb,f,t){const id='#26282c',im='#44484e',il='#6c7278',gl=`rgba(${rgb},${.5+.35*f})`;
+  this.shadow(x,y,7);lGlow(x+.5,y-11,32,rgb,.27*f);
+  R(x-5,y-3,11,3,im);R(x-5,y-3,11,1,il);R(x-4,y-5,9,2,id);
+  R(x-4,y-16,9,11,gl);R(x-2,y-14,5,7,'rgba(255,240,200,.6)');lFlame(x,y-7,i,rgb,false);
+  R(x-5,y-16,1,11,im);R(x+5,y-16,1,11,im);R(x-5,y-11,11,1,id);                             // kafes telleri
+  R(x-5,y-18,11,2,im);R(x-5,y-18,11,1,il);R(x-3,y-20,7,2,im);R(x-1,y-21,3,1,il);
+  g.strokeStyle=il;g.lineWidth=1;g.beginPath();g.arc(x+.5,y-21,5,Math.PI,0);g.stroke();     // sap
+  lGlow(x+.5,y-11,8,rgb,.35*f)},
+ // OKUL eski yazıt odası: mumlu taş sunak
+ shrine(x,y,i,rgb,f,t){const d='#34313c',m='#4f4b58',l='#716c7a',wx='#e8dcc0';
+  this.shadow(x,y,11);lGlow(x+.5,y-14,38,rgb,.26*f);
+  R(x-10,y-3,21,3,d);R(x-10,y-3,21,1,m);R(x-8,y-9,17,6,m);R(x-8,y-9,17,1,l);R(x-8,y-9,1,6,l);R(x+8,y-9,1,6,d);   // sunak taşı
+  R(x-3,y-7,7,2,d);R(x-2,y-7,1,1,l);
+  for(const [cx,h,k] of [[-6,6,0],[-2,9,1],[2,7,2],[6,5,3]]){R(x+cx,y-9-h,2,h,wx);R(x+cx,y-9-h,1,h,'#fff8e8');lFlame(x+cx+1,y-9-h,i+k*3,rgb,false)} // mumlar
+  R(x+4,y-9,1,2,wx);R(x-5,y-9,1,1,wx);                                                     // eriyen mum
+  lGlow(x+.5,y-17,10,rgb,.36*f)},
+ // OKUL gizli geçit: kayadan çıkan kristal kümesi
+ geode(x,y,i,rgb,f,t){const rk='#2a2232',rm='#3e3448',rl='#5a4c66',c1='#8a6ae0',c2='#b6a0ff',c3='#ffffff';
+  this.shadow(x,y,11);lGlow(x+.5,y-14,44,rgb,.3*f);
+  R(x-10,y-4,21,4,rk);R(x-9,y-6,19,2,rm);R(x-9,y-6,19,1,rl);R(x-7,y-7,6,1,rm);R(x+2,y-7,6,1,rm);   // kaya yatak
+  const p=.6+.4*f;
+  R(x-1,y-24,3,18,c1);R(x,y-24,1,17,c2);R(x,y-26,1,2,c3);                                     // ana kristal
+  R(x-6,y-17,3,11,c1);R(x-5,y-17,1,10,c2);R(x-5,y-18,1,1,c3);R(x-8,y-12,2,6,c1);              // sol
+  R(x+4,y-19,3,13,c1);R(x+5,y-19,1,12,c2);R(x+5,y-20,1,1,c3);R(x+7,y-13,2,7,c1);              // sağ
+  R(x-2,y-14,5,6,`rgba(${rgb},${.4*p})`);
+  for(let k=0;k<3;k++){const ph=(t*.5+k*20+i*9)%45;R(x-6+k*6,y-10-ph,1,1,`rgba(${rgb},${1-ph/45})`)}
+  lGlow(x+.5,y-16,14,'235,225,255',.3*f);lGlow(x+.5,y-14,10,rgb,.4*f)},
+ sub:{dis_avlu:'school',yikik_duvar:'school',kirik_sinif:'andon',kutuphane:'andon',ogretmen:'andon',ana_salon:'hall',can_kulesi:'tower',depo:'storm',yazit:'shrine',su_kanali:'under',gizli_gecit:'geode'},
+ krgb:{andon:'255,215,150',hall:'255,150,70',tower:'255,190,100',storm:'255,180,90',shrine:'255,200,120',geode:'170,140,255'},
+ kind(){const th=(ROOM&&ROOM.theme)||'school';if(th==='school'){const s=(ROOM.ts32||TS32_ROOM[ROOMID]);return this.sub[s]||'school'}return this[th]?th:'school'},
+ draw(x,y,i){const fn=this.kind(),rgb=this.krgb[fn]||this.rgb[fn]||this.rgb.school,t=G.t,f=.85+Math.sin(t*.13+i*1.7)*.09+Math.sin(t*.41+i)*.05;
   y=Math.round(y)+3;x=Math.round(x);this.pool(x,y,rgb,f);this[fn](x,y,i,rgb,f,t)}
 };
 lantern=function(x,y,i){LAMP.draw(x,y,i)};
