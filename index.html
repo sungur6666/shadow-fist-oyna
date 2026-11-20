@@ -4225,5 +4225,51 @@ MB_LINES.mb_yun=['Gölgelerin arasında yelpazem açılır. Kai, sen de hazır m
  return prev(e)};})();
 
 </script>
+<script>
+/* Merdiven: sırtı dönük tırmanma + aşağı kayarak inme */
+(()=>{
+ const oLT=Move.ladderTick.bind(Move);
+ Move.ladderTick=function(p,ax){
+  const dn=held('D')&&!held('U'),L=MV.ladder,d0=L.down;
+  if(dn){p.lsv=Math.min(7.5,(p.lsv||2.6)+.38);p.lsl=1}else{p.lsv=0;p.lsl=0}
+  if(dn)L.down=p.lsv;try{oLT(p,ax)}finally{L.down=d0}
+  if(p.st!=='ladder'){if(p.lsl&&p.lsv>4.5&&p.on){FX2.puff&&FX2.puff(p.x,p.y,1,.4,.25,.9);shake(2)}p.lsl=0;p.lsv=0}
+  else if(p.lsl&&G.t%3===0)sparks(p.x+(G.t%6?-6:6),p.y-34,'#ffcf80',1,1.2);
+ };
+ const K=PAL.kai,px=(x,y,w,h,c)=>R(Math.round(x),Math.round(y),w,h,c),sh=(c,a)=>shade(c,a);
+ function back(p){
+  const x=Math.round(p.x),y=Math.round(p.y),sl=!!p.lsl,k=sl?0:Math.sin(p.y*.35),u=k>0;
+  const hair=K.hair,skin=K.skin,cl=K.cloth,dk=K.dark,ac=K.accent,sway=sl?Math.sin(G.t*.9)*1:Math.sin(p.y*.18)*1.2;
+  // gölge çizgisi (sürtünme izi)
+  if(sl){for(let i=0;i<5;i++){const a=.35-i*.06;px(x-7,y-40-i*6,1,4,`rgba(255,240,210,${a})`);px(x+6,y-40-i*6,1,4,`rgba(255,240,210,${a})`)}}
+  // bacaklar
+  let lL,lR; // [dizX,dizY,ayakX,ayakY]
+  if(sl){lL=[x-4,y-7,x-5,y];lR=[x+3,y-7,x+4,y]}
+  else{lL=u?[x-4,y-10,x-4,y-6]:[x-4,y-7,x-4,y];lR=u?[x+3,y-7,x+3,y]:[x+3,y-10,x+3,y-6]}
+  for(const [L,c] of [[lL,dk],[lR,sh(dk,-12)]]){px(L[0]-1,y-14,3,L[1]-(y-14)+1,c);px(L[2]-1,L[1],3,L[3]-L[1],c);px(L[2]-2,L[3]-2,4,2,'#15101a')}
+  // gövde (arkadan)
+  for(let i=0;i<13;i++){const w=i<4?11:i<9?10:9,yy=y-27+i;px(x-Math.floor(w/2),yy,w,1,cl);px(x-Math.floor(w/2),yy,1,1,sh(cl,-24));px(x+Math.ceil(w/2)-1,yy,1,1,sh(cl,-24))}
+  px(x,y-26,1,11,sh(cl,-30)); // sırt dikişi
+  px(x-5,y-16,10,2,ac); // kuşak
+  px(x+2,y-15,2,4+Math.round(Math.abs(sway)),ac);px(x+3,y-12,2,4,sh(ac,-25)); // kuşak uçları
+  // kollar: omuzdan basamaklara
+  let hL,hR;
+  if(sl){hL=[x-7,y-36];hR=[x+6,y-36]}
+  else{hL=u?[x-6,y-41]:[x-6,y-33];hR=u?[x+5,y-33]:[x+5,y-41]}
+  for(const [sx,h,c] of [[x-5,hL,cl],[x+4,hR,sh(cl,-14)]]){
+   const sy=y-26,n=8;for(let i=0;i<=n;i++){const t=i/n;px(sx+(h[0]-sx)*t-1,sy+(h[1]-sy)*t-1,3,3,c)}
+   px(h[0]-1,h[1]-2,3,3,skin);px(h[0]-1,h[1]-2,3,1,sh(skin,18))}
+  // boyun ve kafa (arkadan: saç)
+  px(x-1,y-29,3,2,sh(skin,-15));
+  px(x-3,y-37,7,1,hair);for(let i=0;i<8;i++){const w=i<1?7:i<6?9:7;px(x-Math.floor(w/2),y-36+i,w,1,hair)}
+  px(x-5,y-32,1,2,skin);px(x+5,y-32,1,2,skin); // kulaklar
+  px(x-2,y-35,2,1,sh(hair,45));px(x+1,y-34,1,1,sh(hair,35)); // parlama
+  // atkuyruğu
+  const tx=x+Math.round(sway);px(x-1,y-28,3,1,sh(ac,-30));px(tx-1,y-27,3,3,hair);px(tx,y-24,2,3,hair);px(tx+Math.round(sway*.5),y-21,1,2,hair); // saç bağı + atkuyruğu
+ }
+ const oDK=drawKai;drawKai=function(){const p=P;if(p&&p.st==='ladder'&&!(p.flash>0)){back(p);return}return oDK.apply(this,arguments)};
+})();
+
+</script>
 </body></html>
 
