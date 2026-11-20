@@ -1138,7 +1138,7 @@ const MB_LINES={mb_tie:['Wen\'in son öğrencisi sen misin? Talim meydanı artı
 const G={scene:'title',sel:0,t:0,hs:0,shake:0,mp:0,sk:{},cpx:60,lore:[],bossDead:false,bossOn:false,dlg:null,done:{},playT:0,msg:'',msgT:0,tsel:0,ttab:0,mode:'story',trainAll:false,trainAtk:false,showHit:false,showList:false,shakeOn:true,rank:null,lastRank:null,ob:'',visited:{},items:{},cp:null,card:null,trans:null,doorCd:0};
 let P,E=[],PR=[],FX=[],TX=[],BLOOD=[],cam={x:0},B=null;
 const has=id=>(G.mode==='train'&&G.trainAll)||!!G.sk[id];
-const maxHp=()=>100+(has('hp1')?20:0)+(has('hp2')?20:0)+(has('g_vit')?15:0)+((G.items&&G.items.hearts)||0)*20,maxQi=()=>100+(has('qi1')?25:0)+((G.items&&G.items.altar)||0)*10,maxPot=()=>3+(has('pot')?1:0)+(G.items&&G.items.tea?1:0);
+const maxHp=()=>100+(has('st20_2')?15:0)+(has('hp1')?20:0)+(has('hp2')?20:0)+(has('g_vit')?15:0)+((G.items&&G.items.hearts)||0)*20,maxQi=()=>100+(has('qi1')?25:0)+((G.items&&G.items.altar)||0)*10,maxPot=()=>3+(has('pot')?1:0)+(G.items&&G.items.tea?1:0);
 function sparks(x,y,c,n=8,sp=3){for(let i=0;i<n;i++)FX.push({x,y,vx:rnd(-sp,sp),vy:rnd(-sp,sp*.5),l:rnd(8,20),c})}
 function ring(x,y,r,c,l=14){FX.push({x,y,vx:0,vy:0,l,ml:l,r,c,ring:1})}
 function popup(s,x,y,c='#fff'){let k=0;for(const t of TX)if(t.l>36&&Math.abs(t.x-x)<40&&Math.abs(t.y-y)<10+k*10)k++;TX.push({x,y:y-k*10,s,c,l:50})}
@@ -1223,7 +1223,7 @@ const Style={flow:0,
  input(){const p=P,b=p.swBuf;if(!b)return;p.swBuf=null;if(p.st==='dead'||b.i===p.style)return;
   const m=p.st==='atk'?MOVES[p.mv]:null;
   // Style Cancel: after a connected hit (or in recovery / just after a move) switching fires the style's transition attack
-  const can=p.on&&(b.i>=8?SF20.can(b.i):has('sw_'+SKEY[b.i]))&&((m&&m.tag!=='switch'&&m.tag!=='fin'&&(p.hitOK||p.stT>=p.su+m.ac))||(!m&&p.st==='free'&&p.chainT>0));
+  const can=p.on&&(has('sw_'+SKEY[b.i])&&(b.i<8||SF20.can(b.i)))&&((m&&m.tag!=='switch'&&m.tag!=='fin'&&(p.hitOK||p.stT>=p.su+m.ac))||(!m&&p.st==='free'&&p.chainT>0));
   this.set(b.i);if(can)Combat.start('sw_'+b.i)}};
 /* ==========================================================
    SkillManager
@@ -1934,7 +1934,7 @@ function updateMenus(){const s=G.scene;if(G.msgT>0)G.msgT--;Ptr.handle();
    else if(a==='tall')G.trainAll=!G.trainAll;else if(a==='tatk')G.trainAtk=!G.trainAtk;else if(a==='thit')G.showHit=!G.showHit;
    else if(a==='trst'){resetWorld();G.scene='play'}
    else{save();G.scene='title';G.sel=0;G.mode='story';Snd.music('menu')}}}
- else if(s==='tree'){if(pressed.tree||backP()){G.scene=G.ret||'play';G.sel=0;return}
+ else if(s==='tree'){if(TREE2.input())return;if(pressed.tree||backP()){G.scene=G.ret||'play';G.sel=0;return}
   const N=treeLayout(G.ttab),cur=N[G.tsel]||N[0];
   const mv=(dx,dy)=>{if(!cur)return-1;let best=-1,bd=1e9;N.forEach((n,i)=>{if(i===G.tsel)return;const ex=n.x-cur.x,ey=n.y-cur.y;if(dx&&(Math.sign(ex)!==dx||Math.abs(ey)>Math.abs(ex)*1.6+4))return;if(dy&&(Math.sign(ey)!==dy||Math.abs(ex)>Math.abs(ey)*3+20))return;const d=dx?Math.abs(ex)+Math.abs(ey)*2:Math.abs(ey)+Math.abs(ex)*.6;if(d<bd){bd=d;best=i}});return best};
   const tab=d=>{G.ttab=(G.ttab+TABS.length+d)%TABS.length;G.tsel=0;Snd.sfx('ui')};
@@ -3551,6 +3551,185 @@ const FIN={on:false,e:null,steps:[],si:0,t:0,z:1,zt:1,bar:0,fx:0,fy:0,tmp:null,n
  const oH=hud;hud=function(){if(FIN.on){FIN.overlay();return}oH()};
  const oEnt=World.enter.bind(World);World.enter=function(...a){if(FIN.on)FIN.end();return oEnt(...a)};
 })();
+
+</script>
+<script>
+/* ==========================================================
+   USTALIK AĞACI v3 — sade düzen
+   3 sekme: TEMEL (genel) · STİLLER (21 stil, her biri 4 basamak) · KOMBOLAR
+   Her stil: 1 TEMEL → 2 USTALIK → 3 GEÇİŞ → 4 ÖZEL. Fiyatlar sabit.
+   Eski yetenek kimlikleri korunur: basamak satın alınınca içindeki eski yetenekler de açılır.
+   ========================================================== */
+const TREE2=(()=>{
+const TIER=['TEMEL','USTALIK','GEÇİŞ','ÖZEL'],TCOST=[3,5,5,8];
+// ---- TEMEL sekmesi: sade isimler ----
+const GEN_TXT={hp1:['Sağlam Beden I','Azami canın 20 artar.',3],hp2:['Sağlam Beden II','Azami canın 20 daha artar.',5],g_vit:['Sağlam Beden III','Azami canın 15 daha artar.',5],
+ qi1:['Derin Nefes','Ki barın 25 büyür; özel teknikleri daha sık kullanırsın.',3],pot:['Şifa Kabağı','Bir iksir hakkı daha.',4],
+ g_dj:['Çift Zıplama','Havadayken bir kez daha zıplarsın. (Yeşil Yılan Lin\'i yenerek de kazanılır.)',5],g_wj:['Duvar Sıçraması','Havada duvara doğru bas: tutunur, kayarsın. Zıpla ile duvardan sıçrarsın.',4],
+ g_ad:['Hava Atılışı','Havadayken Kaçış tuşuyla ileri atılırsın. Yere değince yenilenir.',4],g_dcancel:['Rüzgâr Adımı','Saldırının ortasında bile kaçış yapabilirsin.',3],
+ g_buffer:['Akış Zihni','Kombolar daha uzun sürer, tuş zamanlaması daha affedicidir.',2],g_fin:['Son Darbe','5 ve üzeri vuruşlu komboda Ağır tuşu, stilin bitirici hamlesini yapar.',5],
+ rl_iron:['Ejderha Kırıcı','Ağır saldırılar demir mühürleri kırar. Kalkan Ustası Gang\'i yenerek kazanılır.',0],rl_veil:['Gölge Adımı','Kaçışla gölge perdelerinden geçersin. Gölge Rahibe Mei\'yi yenerek kazanılır.',0]};
+for(const id in GEN_TXT){const s=SKILLS.find(x=>x.id===id);if(s){s.n=GEN_TXT[id][0];s.d=GEN_TXT[id][1];if(!s.relic)s.c=GEN_TXT[id][2]}}
+const GEN=[['BEDEN',['hp1','hp2','g_vit'],1],['Kİ VE ŞİFA',['qi1','pot'],0],['HAREKET',['g_dj','g_wj','g_ad','g_dcancel'],0],['SAVAŞ',['g_buffer','g_fin'],1],['KADİM TEKNİKLER',['rl_iron','rl_veil'],0]];
+const GREQ={hp2:['hp1'],g_vit:['hp2'],g_fin:['g_buffer']};
+// ---- STİLLER: 4 basamak ----
+const OLD=[
+ [['Kaplan Gücü','Ağır saldırılar %25 güçlenir. Yukarı + Ağır düşmanı havaya kaldırır.',['t_palm','t_upper']],['Zırh Kıran','Tüm Kaplan vuruşları zırhı kırar. Kaçıştan hemen sonra Ağır: omuz atılması, yere vuruş dalgası genişler.',['t_break','t_charge','t_slam']],['Kaplan Atılışı','Saldırının ortasında Kaplan\'a geç: atılma darbesi. Duvara çarpan düşman 2 kat hasar alır.',['sw_tiger','t_wall']],['Özel: Kükreyen Yumruk','Ki tuşu ile Kaplan özel saldırısı.',['t_sp']]],
+ [['Turna Tekmesi','Tekmeler %25 güçlenir. Yukarı + Tekme düşmanı havaya kaldırır.',['c_kick','c_rise']],['Gökyüzü Zinciri','Havada 4 vuruşluk zincir yaparsın; fırlattığın düşmanın peşinden kendiliğinden yükselirsin.',['c_air','c_follow']],['Turna Yükselişi','Saldırının ortasında Turna\'ya geç: fırlatıcı darbe.',['sw_crane']],['Özel: Turna Kanadı','Ki tuşu ile çoklu tekme.',['c_sp']]],
+ [['Yılan Gözü','Kusursuz savuş penceresi uzar. Yılan vuruşları savunmayı kırar.',['s_eye','s_gb']],['Zehirli Karşılık','Karşı saldırılar %50, saldırı yapan düşmana vuruşların %60 daha güçlü.',['s_counter','s_punish']],['Yılan Aldatmacası','Saldırının ortasında Yılan\'a geç: yenilmez darbe.',['sw_snake']],['Özel: Sarmal Duruş','1 saniye boyunca gelen her saldırıyı kendiliğinden savuşturursun.',['s_sp']]],
+ [['İç Akış','Ki %50 daha hızlı dolar. Ağır saldırılar kısa bir ki dalgası bırakır.',['d_flow','d_palm']],['Ejderha Nefesi','Ki Dalgası %60 güçlenir ve büyür.',['d_breath']],['Ejderha Nabzı','Saldırının ortasında Ejderha\'ya geç: ki patlaması.',['sw_dragon']],['Özel: Ki Novası','Yukarı + Ki: etrafındaki herkese vuran patlama.',['d_nova']]],
+ [['Merkez Hat','Hafif saldırılar daha hızlı başlar.',['w_fast']],['Zincir Ustası','Zincir yumruklar %35 güçlenir; blok dayanıklılığın yavaş azalır.',['w_chain','w_stick']],['Merkez Hat Darbesi','Saldırının ortasında Wing Chun\'a geç: çifte yumruk.',['sw_wingchun']],['Özel: Bir İnç Yumruğu','Ki tuşu ile kısa mesafeden yıkıcı yumruk.',['w_sp']]],
+ [['Sarhoş Şansı','Vuruşların %20 ihtimalle 1,6 kat hasar verir.',['r_lucky']],['Sarhoş Beden','Kaçış daha uzun korur; bu stilde aldığın hasar %15 azalır.',['r_dodge','r_tough']],['Sarhoş Adım','Saldırının ortasında Sarhoş Usta\'ya geç: yenilmez omuz darbesi.',['sw_drunk']],['Özel: Sekiz Ölümsüz','Ki tuşu ile yenilmez çoklu vuruş.',['r_sp']]],
+ [['Maymun Sıçrayışı','%12 daha yükseğe zıplarsın; vuruşlar %60 daha fazla ki kazandırır.',['m_jump','m_steal']],['Hızlı Pençe','Çoklu vuruşlar %30 güçlenir.',['m_flurry']],['Maymun Taklası','Saldırının ortasında Maymun\'a geç: fırlatıcı takla.',['sw_monkey']],['Özel: Bulut Sıçrayışı','Ki tuşu ile uzağa atılan pençe.',['m_sp']]],
+ [['Kanca Kilidi','Vuruşların düşmanı %30 daha uzun sersemletir.',['n_hook']],['Savunma Söken','Vuruşların savunmayı kırar; kusursuz savuş penceresi uzar.',['n_gb','n_eye']],['Mantis Atılışı','Saldırının ortasında Mantis\'e geç: savunma söken satır.',['sw_mantis']],['Özel: Kanca Fırtınası','Ki tuşu ile savunma söken kanca yağmuru.',['n_sp']]]];
+const SIG={8:['Çelik Deri','Bu stildeyken aldığın hasar %10 daha azalır.'],9:['Gök Arhatı','Havadaki düşmanlara %25 fazla hasar.'],10:['Dibine Gir','Yakın mesafeden vuruşların %20 daha güçlü.'],
+ 11:['Akan Su','Kusursuz savuştan sonra 3 saniye boyunca %30 fazla hasar.'],12:['Gölge Daire','Arkadan vuruşların %25 daha güçlü.'],13:['Durdurulamaz','Hafif saldırıların da artık kesilemez (süper zırh).'],
+ 14:['Kök Salmış','Yerdeyken aldığın hasar %15 azalır.'],15:['Değirmen Kolu','Ağır saldırıların %25 daha güçlü.'],16:['Kartal Gözü','İşaretlediğin düşmanlara %20 fazla hasar.'],
+ 17:['Avcı Hızı','Art arda 3 isabetten sonra vuruşların %15 daha güçlü.'],18:['Yere Ser','Yerdeki ve havadaki düşmanlara %20 fazla hasar.'],19:['Ring Tecrübesi','Vuruş türünü değiştirdiğinde ek %10 hasar.'],20:['Okul Disiplini','Azami canın 15 artar (tüm stillerde geçerli).']};
+const SHORT8=['Kaplan','Turna','Yılan','Ejderha','Wing Chun','Sarhoş','Maymun','Mantis'];const shortN=i=>{if(i<8)return SHORT8[i];const f=(SF20D.styles.find(x=>x.i===i)||{}).short;if(f)return f;const n=STY[i].n;return n.charAt(0)+n.slice(1).toLocaleLowerCase('tr')};
+const NODES={};
+for(let i=0;i<STY.length;i++){NODES[i]=[];for(let k=0;k<4;k++){let n,d,gr;
+  if(i<8){[n,d,gr]=OLD[i][k]}else{const key=SKEY[i],S=SF20D.styles.find(x=>x.i===i)||{},sp=MOVES[S.special],fn=MOVES[S.finisher];
+   if(k===0){n=shortN(i)+' Temeli';d='Bu stilde tüm vuruşların %15 daha güçlü.'}
+   if(k===1){[n,d]=SIG[i]}
+   if(k===2){n=shortN(i)+' Geçişi';d='Saldırının ortasında '+shortN(i)+' stiline geçince özel bir geçiş darbesi yaparsın.';gr=['sw_'+key]}
+   if(k===3){n='Özel: '+(sp?sp.n:'Özel Teknik');d=sp&&sp.dmg>0?sp.n+' (Ki tuşu) ve bitirici hamle'+(fn?' ('+fn.n+')':'')+' %40 daha güçlü.':'Bitirici hamle'+(fn?' ('+fn.n+')':'')+' %40 daha güçlü.'+(sp?' '+sp.n+' (Ki tuşu) bu stilin koruyucu tekniğidir.':'')}}
+  const id='st'+i+'_'+(k+1);gr=(gr||[]).slice();gr.unshift(id);
+  let s=SKILLS.find(x=>x.id===id);if(!s){s={id,t:20,n,c:TCOST[k],d,grants:gr,sty:i,tier:k};SKILLS.push(s)}
+  NODES[i].push(s)}}
+const COMBO=()=>SKILLS.filter(x=>x.t===10);
+// ---- sahiplik / durum / satın alma ----
+const learned=i=>G.mode==='train'||!!(G.styles&&G.styles[i]);
+const own=s=>{if(!s)return false;if(s.relic)return Skill.own(s.id);if(s.grants)return!!G.sk[s.id];return!!G.sk[s.id]||Skill.own(s.id)};
+function reqOf(s){if(s.grants){const r=[];if(s.tier>0)r.push(NODES[s.sty][s.tier-1].id);return r}return(GREQ[s.id]||s.req||[])}
+function reqName(id){const sw=id.startsWith('sw_')?Object.values(NODES).flat().find(n=>n.grants.includes(id)):null;if(sw)return sw.n+' ('+STY[sw.sty].n+')';const s=SKILLS.find(x=>x.id===id);return s?s.n:id}
+function missing(s){const m=reqOf(s).filter(r=>!(SKILLS.find(x=>x.id===r)&&own(SKILLS.find(x=>x.id===r)))&&!G.sk[r]).map(reqName);if(s.grants&&!learned(s.sty))m.unshift('Önce stili öğren: '+STY[s.sty].n);return m}
+function state(s){if(own(s))return'own';if(s.relic)return'relic';if(missing(s).length)return'lock';return G.mp>=s.c?'ready':'poor'}
+function buy(s){if(!s)return false;if(s.relic){toast(own(s)?'Bu kadim tekniği kazandın':'Bu kadim teknik bir ustayı yenerek kazanılır');Snd.sfx(own(s)?'ui':'block');return false}
+ if(G.mode==='train'){toast('Eğitim alanında teknik satın alınmaz');return false}
+ if(own(s)){toast('Zaten öğrenildi');return false}
+ const ms=missing(s);if(ms.length){toast(ms[0].startsWith('Önce')?ms[0]:'Önce öğren: '+ms.join(', '));Snd.sfx('block');return false}
+ if(G.mp<s.c){toast('Yeterli Ustalık yok ('+s.c+' gerekli)');Snd.sfx('block');return false}
+ const mh=maxHp();G.mp-=s.c;G.sk[s.id]=1;for(const gr of s.grants||[])G.sk[gr]=1;const d=maxHp()-mh;if(d>0)P.hp=Math.min(maxHp(),P.hp+d);
+ G.treeFx={id:s.id,t:36};Snd.sfx('bell');toast('Öğrenildi: '+s.n);save();return true}
+// eski kayıtlar: basamağın herhangi bir eski yeteneği varsa basamağı tamamla
+function migrate(){if(!G.sk)return;for(const i in NODES)for(const s of NODES[i]){if(G.sk[s.id])continue;if(s.grants.slice(1).some(g=>G.sk[g])){G.sk[s.id]=1;for(const g of s.grants)G.sk[g]=1}}}
+Skill.cost=s=>s.c;
+// ---- durum değişkenleri ----
+const V={tab:1,foc:'main',gr:[0,0],sty:0,card:0,cs:0,scroll:0};
+const icon=s=>{if(s.grants){return['fist','star','swap','flame'][s.tier]}return skIcon(s.id)};
+// ---- çizim yardımcıları ----
+function node(x,y,w,h,s,sel,c){const st=state(s),pul=.5+.5*Math.sin(G.t*.15);
+ const fr=st==='relic'?'#7050a0':st==='own'?'#e8c060':st==='ready'?(G.t%30<20?c:'#fff'):st==='poor'?'#6a5a50':'#2e2428';
+ if(st==='own'){const gr=g.createRadialGradient(x+w/2,y+h/2,2,x+w/2,y+h/2,w*.8);gr.addColorStop(0,'rgba(255,210,90,.28)');gr.addColorStop(1,'rgba(255,210,90,0)');g.fillStyle=gr;g.fillRect(x-8,y-8,w+16,h+16)}
+ R(x,y,w,h,fr);R(x+1,y+1,w-2,h-2,st==='own'?'#33240f':'#130b11');
+ if(sel){g.globalAlpha=.25+.2*pul;R(x+1,y+1,w-2,h-2,'#fff');g.globalAlpha=1;R(x-2,y-2,w+4,1,'#fff');R(x-2,y+h+1,w+4,1,'#fff');R(x-2,y-2,1,h+4,'#fff');R(x+w+1,y-2,1,h+4,'#fff')}
+ const ic=st==='own'?'#ffe08a':st==='ready'?c:st==='relic'?'#a080d0':st==='poor'?'#8a7a70':'#4a3e44';pix(icon(s),x+w/2,h>=26?y+8:y+h/2,ic,'#fff');
+ if(st==='lock')pix('lock',x+w-6,y+h-6,'#887','#887');if(st==='own')R(x+w-6,y+3,3,3,'#6c6');
+ if(G.treeFx&&G.treeFx.id===s.id){const k=1-G.treeFx.t/36;g.strokeStyle='rgba(255,220,120,'+(1-k)+')';g.lineWidth=2;g.beginPath();g.arc(x+w/2,y+h/2,10+k*24,0,6.283);g.stroke()}
+ return st}
+function arrow(x1,y,x2,lit,c){R(x1,y,x2-x1,2,lit?c:'#3a2c30');R(x2-3,y-2,1,6,lit?c:'#3a2c30');R(x2-2,y-1,1,4,lit?c:'#3a2c30')}
+function detail(x,y,w,h,s,c,extra){R(x,y,w,h,'#0e0910');R(x,y,w,1,c);R(x,y+h-1,w,1,'#3a2a20');if(!s)return;const st=state(s);let yy=y+6;
+ const nl=wrap(s.n,Math.max(14,(w-12)/4.6|0));nl.forEach((l,k)=>T(l.trim(),x+6,yy+k*10,'#fff',8));yy+=nl.length*10+3;
+ const chip=st==='own'?['ÖĞRENİLDİ','#3a6a3a']:st==='ready'?['ÖĞRENİLEBİLİR','#6a5020']:st==='poor'?['USTALIK YETMİYOR','#5a2a2a']:st==='relic'?['USTADAN KAZANILIR','#4a3070']:['KİLİTLİ','#3a3038'];
+ R(x+6,yy,chip[0].length*4.3+8,10,chip[1]);T(chip[0],x+10,yy+2,'#fff',6);yy+=15;
+ for(const l of wrap(s.d,Math.max(18,(w-12)/3.9|0))){if(l.trim()){T(l.trim(),x+6,yy,'#d8d0c4',7);yy+=9}}
+ if(extra)for(const [t,cc] of extra){yy+=2;for(const l of wrap(t,Math.max(18,(w-12)/3.9|0))){T(l.trim(),x+6,yy,cc,6);yy+=8}}
+ const ms=st==='lock'?missing(s):[];if(ms.length){yy+=3;T('Gerekli:',x+6,yy,'#c98',7);yy+=9;for(const m of ms){for(const l of wrap('× '+m,Math.max(18,(w-16)/3.9|0))){T(l.trim(),x+10,yy,'#c86',6);yy+=8}}}
+ if(st!=='own'&&st!=='relic'){const by=y+h-22,can=st==='ready';T(s.c+' Ustalık',x+w/2,by-11,G.mp>=s.c?'#e8d090':'#c66',7,'center');
+  R(x+8,by,w-16,16,can?(G.t%40<30?'#8a1a14':'#a02018'):'#2a2026');R(x+8,by,w-16,1,can?'#ffd860':'#4a3a40');T('ÖĞREN',x+w/2,by+4,can?'#fff':'#665',8,'center');Ptr.reg(x+8,by,w-16,16,()=>buy(s))}}
+// ---- ana çizim ----
+function draw(){migrate();const t=G.t;R(0,0,W,H,'rgba(4,2,6,.92)');panel(14,8,W-28,H-16);
+ T('USTALIK AĞACI',24,14,'#e8d090',10);R(24,26,90,1,'#7a5a2a');
+ R(W-104,11,80,14,'#1a1016');R(W-104,11,80,1,'#7a5a2a');pix('drop',W-95,18,'#40c080','#c0ffe0');T(G.mp+'',W-28,14,'#fff',9,'right');T('USTALIK',W-86,15,'#8a9',6);
+ const TB=['TEMEL','STİLLER','KOMBOLAR'],tw=Math.min(96,(W-60)/3|0);
+ TB.forEach((nm,i)=>{const x=24+i*(tw+4),y=32,sel=V.tab===i,foc=V.foc==='tabs'&&sel;R(x,y,tw,13,sel?'rgba(150,25,25,.8)':'rgba(30,20,26,.95)');R(x,y+12,tw,1,sel?'#ffd860':'#5a4030');
+  if(foc){R(x-1,y-1,tw+2,1,'#fff');R(x-1,y+13,tw+2,1,'#fff')}T(nm,x+tw/2,y+3,sel?'#fff':'#bba',7,'center');Ptr.reg(x,y,tw,13,()=>{V.tab=i;V.foc='main';Snd.sfx('ui')})});
+ const top=52;
+ if(V.tab===0)drawGen(top);else if(V.tab===1)drawSty(top);else drawCombo(top);
+ if(G.treeFx&&--G.treeFx.t<=0)G.treeFx=null;
+ Ptr.back();T(V.tab===1&&V.foc==='path'?'← → basamak seç   Enter öğren   Esc stillere dön':'Yön tuşları gez   Enter seç / öğren   ↑ sekmeler   Esc çık',W/2,H-20,'#888',6,'center')}
+function drawGen(top){const px=W-Math.min(170,W*.36|0)-20,pw=W-20-px-4,lx=26,cw=Math.min(58,(px-lx-74-12-3*14)/4|0),rh=Math.min(44,(H-top-34)/GEN.length|0),ch=rh-6;
+ GEN.forEach((row,ri)=>{const y=top+ri*rh;T(row[0],lx,y+ch/2-3,'#c8a060',6);let x=lx+74;
+  row[1].forEach((id,ci)=>{const s=SKILLS.find(q=>q.id===id);if(!s)return;const sel=V.foc==='main'&&V.gr[0]===ri&&V.gr[1]===ci;
+   if(ci>0&&row[2])arrow(x-12,y+ch/2,x-1,own(SKILLS.find(q=>q.id===row[1][ci-1])),'#e8c060');
+   const st=node(x,y,cw,ch,s,sel,'#c8a060');const nl=wrap(s.n,(cw-2)/3.4|0).slice(0,2);nl.forEach((l,j)=>T(l.trim(),x+cw/2,y+ch-(nl.length>1?14:9)+j*6,st==='own'?'#ffe8b0':st==='lock'?'#776':'#cbb',5,'center'));
+   Ptr.reg(x,y,cw,ch,()=>{if(V.gr[0]===ri&&V.gr[1]===ci&&V.foc==='main')buy(s);else{V.gr=[ri,ci];V.foc='main';Snd.sfx('ui')}});x+=cw+14})});
+ const r=GEN[V.gr[0]],s=r&&SKILLS.find(q=>q.id===r[1][Math.min(V.gr[1],r[1].length-1)]);detail(px,top,pw,H-top-30,s,'#c8a060')}
+function drawSty(top){const cols=7,gw=Math.min(W*.5|0,280),tw=(gw-(cols-1)*3)/cols|0,th=Math.min(30,(H-top)*.12|0),gx=26;
+ for(let i=0;i<STY.length;i++){const c=i%cols,r=i/cols|0,x=gx+c*(tw+3),y=top+r*(th+3),L=learned(i),sel=V.sty===i,col=STY[i].c,n=NODES[i].filter(own).length;
+  R(x,y,tw,th,sel?'#fff':L?col:'#2a2026');R(x+1,y+1,tw-2,th-2,L?'#1c1218':'#100a0e');R(x+1,y+1,3,th-2,L?col:'#3a3036');
+  const nm=shortN(i),sn0=nm;let sn=sn0;if(sn.length>10){const w=sn.split(' ');sn=w[0].length<=6&&w[1]?w[0]+' '+w[1]:w[0]}if(sn.length>9)sn=sn.slice(0,8)+'.';T(sn,x+tw/2+1,y+4,L?'#eee':'#665',5,'center');
+  for(let k=0;k<4;k++)R(x+tw/2-9+k*5,y+th-7,4,3,k<n?'#e8c060':L?'#4a3a30':'#2a2026');
+  if(!L)pix('lock',x+tw-6,y+th-12,'#665','#665');
+  if(sel&&V.foc!=='tabs'){g.globalAlpha=.2+.15*Math.sin(G.t*.15);R(x,y,tw,th,'#fff');g.globalAlpha=1}
+  Ptr.reg(x,y,tw,th,()=>{V.sty=i;V.foc='main';V.card=firstOpen(i);Snd.sfx('ui')})}
+ // stil bilgisi
+ const i=V.sty,S=STY[i],col=S.c,inf=(SF20D.info&&SF20D.info[i])||{},M=SF20D.masters&&SF20D.masters[i],ix=gx+gw+12,iw=W-20-ix-4,gh=3*(th+3);
+ R(ix,top,iw,gh-3,'#0e0910');R(ix,top,iw,2,col);T(S.n,ix+6,top+6,col,9);
+ const L=learned(i);let yy=top+19;
+ const stat=L?['ÖĞRENİLDİ · seviye '+((typeof SF20!=='undefined'&&SF20.level)?SF20.level(i):1),'#6c6']:['KİLİTLİ','#c86'];T(stat[0],ix+6,yy,stat[1],6);yy+=10;
+ const lines=[];if(inf.identity)lines.push([inf.identity,'#d8d0c4']);if(inf.strong)lines.push(['+ '+inf.strong,'#9c9']);if(inf.weak)lines.push(['− '+inf.weak,'#c99']);
+ if(!L&&M){const rm=ROOMS[M.room]||{},met=G.mmet&&G.mmet[i];lines.push(['Usta: '+M.name+' — '+(met?(rm.n||M.room):(REGN[rm.reg]||'?')+' bölgesinde'),'#e8d090'])}
+ for(const [tx,cc] of lines){for(const l of wrap(tx,Math.max(20,(iw-12)/3.9|0))){if(yy>top+gh-10)break;T(l.trim(),ix+6,yy,cc,6);yy+=8}}
+ // 4 basamak yolu
+ const py=top+gh+6,cw=Math.min(110,(W-52-3*16)/4|0),chh=Math.min(44,(H-py-34)*.42|0),tot=cw*4+16*3,px0=(W-tot)/2|0;
+ NODES[i].forEach((s,k)=>{const x=px0+k*(cw+16),sel=V.foc==='path'&&V.card===k;if(k>0)arrow(x-15,py+chh/2,x-2,own(NODES[i][k-1]),col);
+  const st=node(x,py,cw,chh,s,sel,col);T((k+1)+' '+TIER[k],x+4,py+3,st==='own'?'#e8c060':'#8a7a70',5);
+  const nm=wrap(s.n,(cw-6)/4.2|0);nm.slice(0,2).forEach((l,j)=>T(l.trim(),x+cw/2,py+chh-15+j*7-(nm.length>1?4:0),st==='own'?'#ffe8b0':'#cbb',5,'center'));
+  Ptr.reg(x,py,cw,chh,()=>{if(V.foc==='path'&&V.card===k)buy(s);else{V.card=k;V.foc='path';Snd.sfx('ui')}})});
+ // seçili basamak ayrıntısı
+ const s=NODES[i][V.card],dy=py+chh+6,dh=H-dy-28,st=state(s);R(26,dy,W-52,dh,'#0e0910');R(26,dy,W-52,1,col);
+ T(s.n,32,dy+5,'#fff',8);const chip=st==='own'?['ÖĞRENİLDİ','#3a6a3a']:st==='ready'?['ÖĞRENİLEBİLİR','#6a5020']:st==='poor'?['USTALIK YETMİYOR','#5a2a2a']:['KİLİTLİ','#3a3038'];
+ const cx=32+s.n.length*4.7+8;R(cx,dy+4,chip[0].length*4.3+8,10,chip[1]);T(chip[0],cx+4,dy+6,'#fff',6);
+ let ly=dy+18;const bw=Math.min(110,W*.2|0);for(const l of wrap(s.d,(W-52-bw-24)/3.9|0)){T(l.trim(),32,ly,'#d8d0c4',7);ly+=9}
+ const ms=st==='lock'?missing(s):[];if(ms.length)T('Gerekli: '+ms.join(' · '),32,ly+2,'#c86',6);
+ if(st!=='own'){const bx=W-26-bw-6,by=dy+dh/2-8,can=st==='ready';T(s.c+' Ustalık',bx+bw/2,by-10,G.mp>=s.c?'#e8d090':'#c66',7,'center');R(bx,by,bw,16,can?(G.t%40<30?'#8a1a14':'#a02018'):'#2a2026');R(bx,by,bw,1,can?'#ffd860':'#4a3a40');T('ÖĞREN',bx+bw/2,by+4,can?'#fff':'#665',8,'center');Ptr.reg(bx,by,bw,16,()=>buy(s))}
+ // yeni stillerin tarifi bilgisi
+ const SD=SF20D.styles.find(x=>x.i===i);if(SD&&SD.recipes&&SD.recipes.length&&dh>40){const r=SD.recipes[0];T('Stil tarifi (stil seviyesi 3): '+r.seq.join('-')+'  "'+r.n+'"',32,dy+dh-10,'#9a88c8',6)}}
+function drawCombo(top){const L=COMBO(),px=W-Math.min(170,W*.36|0)-20,pw=W-20-px-4,lw=px-30,rh=15,vis=Math.max(3,(H-top-34)/rh|0);
+ if(V.cs<V.scroll)V.scroll=V.cs;if(V.cs>=V.scroll+vis)V.scroll=V.cs-vis+1;
+ T('Tuş sırasını tuttur, ek hasar al. Öğrenince kendiliğinden çalışır.',26,top,'#a99',6);
+ L.slice(V.scroll,V.scroll+vis).forEach((s,j)=>{const k=j+V.scroll,y=top+10+j*rh,st=state(s),sel=V.foc==='main'&&V.cs===k;
+  R(26,y,lw,rh-2,sel?'rgba(150,25,25,.55)':'#140c12');if(sel)R(26,y+rh-3,lw,1,'#ffd860');pix('chain',34,y+6,st==='own'?'#ffe08a':st==='ready'?'#ff8060':'#5a4a48');
+  T(s.n,44,y+3,st==='own'?'#ffe8b0':st==='lock'?'#776':'#eee',7);const dd=(s.d||'').split(':')[0];T(dd.length>34?dd.slice(0,33)+'…':dd,44+Math.min(90,lw*.36|0),y+4,'#988',5);
+  T(st==='own'?'✓':s.c+'',26+lw-6,y+3,st==='own'?'#6c6':G.mp>=s.c?'#e8d090':'#966',7,'right');
+  Ptr.reg(26,y,lw,rh-2,()=>{if(V.cs===k&&V.foc==='main')buy(s);else{V.cs=k;V.foc='main';Snd.sfx('ui')}})});
+ if(L.length>vis){const sh=(H-top-44)*vis/L.length,sy=top+10+(H-top-44-sh)*V.scroll/Math.max(1,L.length-vis);R(26+lw+2,sy,2,sh,'#7a5a2a')}
+ detail(px,top,pw,H-top-30,L[V.cs],'#ff8060')}
+function firstOpen(i){const k=NODES[i].findIndex(s=>!own(s));return k<0?3:k}
+// ---- girdi ----
+function input(){if(pressed.tree){G.scene=G.ret||'play';G.sel=0;return true}
+ if(backP()){if(V.foc==='path'){V.foc='main';Snd.sfx('ui');return true}G.scene=G.ret||'play';G.sel=0;return true}
+ const ok=okP();
+ if(V.foc==='tabs'){if(pressed.L){V.tab=(V.tab+2)%3;Snd.sfx('ui')}if(pressed.R){V.tab=(V.tab+1)%3;Snd.sfx('ui')}if(pressed.D||ok){V.foc='main';Snd.sfx('ui')}return true}
+ if(V.tab===0){let [r,c]=V.gr;const row=()=>GEN[r][1];
+  if(pressed.U){if(r===0){V.foc='tabs'}else{r--;c=Math.min(c,row().length-1)}Snd.sfx('ui')}
+  if(pressed.D&&r<GEN.length-1){r++;c=Math.min(c,row().length-1);Snd.sfx('ui')}
+  if(pressed.L&&c>0){c--;Snd.sfx('ui')}if(pressed.R&&c<row().length-1){c++;Snd.sfx('ui')}
+  V.gr=[r,c];if(ok)buy(SKILLS.find(q=>q.id===row()[c]));return true}
+ if(V.tab===1){if(V.foc==='path'){if(pressed.L&&V.card>0){V.card--;Snd.sfx('ui')}if(pressed.R&&V.card<3){V.card++;Snd.sfx('ui')}if(pressed.U||pressed.D){V.foc='main';Snd.sfx('ui')}if(ok)buy(NODES[V.sty][V.card]);return true}
+  const n=STY.length,cols=7;let i=V.sty;
+  if(pressed.L&&i%cols>0)i--;if(pressed.R&&i%cols<cols-1&&i+1<n)i++;
+  if(pressed.U){if(i<cols){V.foc='tabs';Snd.sfx('ui');return true}i-=cols}
+  if(pressed.D){if(i+cols<n)i+=cols;else{V.foc='path';V.card=firstOpen(i);Snd.sfx('ui');return true}}
+  if(i!==V.sty){V.sty=i;V.card=firstOpen(i);Snd.sfx('ui')}
+  if(ok){V.foc='path';V.card=firstOpen(i);Snd.sfx('ui')}return true}
+ const L=COMBO();if(pressed.U){if(V.cs===0)V.foc='tabs';else V.cs--;Snd.sfx('ui')}if(pressed.D&&V.cs<L.length-1){V.cs++;Snd.sfx('ui')}if(ok)buy(L[V.cs]);return true}
+// ---- oyun etkileri (yeni stiller) ----
+const oHit=Combat.hit.bind(Combat);
+Combat.hit=function(e,m,opt={}){const p=P,s=p.style;let mul=1;
+ if(s>=8&&m){if(has('st'+s+'_1'))mul*=1.15;
+  if(has('st'+s+'_2')){if(s===9&&(e.air||!e.on))mul*=1.25;if(s===10&&Math.abs(e.x-p.x)<24)mul*=1.2;if(s===11&&p.tcB>0)mul*=1.3;if(s===12&&e.face===p.face)mul*=1.25;
+   if(s===15&&m.tag==='heavy')mul*=1.25;if(s===16&&e.mark>0)mul*=1.2;if(s===17&&(p.mom||0)>=3)mul*=1.15;if(s===18&&(e.down>0||e.air))mul*=1.2;if(s===19&&p.lastTag&&p.lastTag!==m.tag)mul*=1.1}
+  if(has('st'+s+'_4')&&(m.tag==='spec'||m.tag==='fin'))mul*=1.4}
+ return oHit(e,m,mul===1?opt:Object.assign({},opt,{mul:(opt.mul||1)*mul}))};
+const oHurt=hurtPlayer;hurtPlayer=function(dmg,...a){const p=P;if(p){if(p.style===8&&has('st8_2'))dmg*=.9;if(p.style===14&&has('st14_2')&&p.on)dmg*=.85}return oHurt(dmg,...a)};
+const oStart=Combat.start.bind(Combat);Combat.start=function(id){const ok=oStart(id);const p=P,m=MOVES[id];if(ok&&m&&p.style===13&&has('st13_2')&&m.tag==='light')p.sarmor=Math.max(p.sarmor||0,p.su+m.ac);return ok};
+const oPar=Parry.success.bind(Parry);Parry.success=function(p,...a){const r=oPar(p,...a);if(P&&P.style===11&&has('st11_2')){P.tcB=180;popup('AKAN SU',P.x,P.y-60,STY[11].c)}return r};
+const oUP=updatePlay;updatePlay=function(){if(P&&P.tcB>0)P.tcB--;return oUP()};
+return{draw,input,migrate,NODES,V,buy,state}})();
+drawTree=function(){TREE2.draw()};
 
 </script></body></html>
 
