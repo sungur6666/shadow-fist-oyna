@@ -1347,9 +1347,9 @@ const Combat={
   // ---- reaction: hit stun / knockback / launch / juggle ----
   const dec=Math.max(.45,1-.07*e.jug),last=opt.last!==false;
   let kb=last?(m.lastKb||m.kb||0):(m.kb||0),lift=(last&&m.lastLift)||m.lift||0,stun=(m.stun||16)*(rec&&rec.stun||1)*(p.style===7&&has('n_hook')?1.3:1);
-  if(rec&&rec.lift)lift*=rec.lift;if(rec&&rec.id==='k_storm')kb=Math.max(kb,9.5);
+  if(rec&&rec.lift)lift*=rec.lift;if(rec&&(rec.id==='k_storm'||rec.wall))kb=Math.max(kb,9.5);
   if(e.boss){if(e.st==='brec'||e.st==='stun')e.x+=dir*kb*.6}
-  else if(stag){e.st='chase';e.tele=0;e.rip=false;e.grd=0;e.wallOk=!!m.wall||e.air||lift>0||!!(rec&&rec.id==='k_storm');
+  else if(stag){e.st='chase';e.tele=0;e.rip=false;e.grd=0;e.wallOk=!!m.wall||e.air||lift>0||!!(rec&&(rec.id==='k_storm'||rec.wall));
    if(m.spike&&e.air){e.vy=9.5;e.vx=dir;e.spiked=1;e.jug++}
    else if(lift>0&&(grounded||e.air||m.otg)){e.air=true;e.down=0;e.vy=-lift*dec;e.vx=dir*(kb||.5)*(m.aoe?.35:1);e.jug++;e.on=false;e.y-=1}
    else if(e.air){e.vy=Math.min(e.vy,-2.9*dec);e.vx=dir*Math.min(.7,kb*.22);e.jug++}
@@ -3048,13 +3048,13 @@ Combat.hit=function(e,m,opt={}){const p=P,s=p.style;let mul=1;const ev=[];
  else if((m.grab||m.throw)&&big)popup('KAVRANAMAZ',e.x,e.y-58,'#999');
  if(m.pull||(m.kb<0))ev.push('pull');
  p.sfHits=(p.sfHits||0)+1;if(p.sfHits===2)ev.push('multi');
- if(G.mode!=='train'){G.sxp[s]=(G.sxp[s]||0)+1;const lv=level(s);if(lv>(p.lvSeen||{})[s]){(p.lvSeen=p.lvSeen||{})[s]=lv;if(lv>=3)toast(STY[s].n+' seviye 3: stil tarifleri açıldı')}}
+ if(G.mode!=='train'){G.sxp[s]=(G.sxp[s]||0)+1;const lv=level(s);if(lv>(p.lvSeen||{})[s]){(p.lvSeen=p.lvSeen||{})[s]=lv;if(lv>=3)toast(STY[s].n+' seviye 3!')}}
  for(const k of ev)TR.ev(k,{});TR.ev('hit',{tag:m.tag,m});
  return r};
 
 // ---------- tarifler (yeni stiller) ----------
 const oReg=Combo.register.bind(Combo);
-Combo.register=function(m,e,opt){const rec=oReg(m,e,opt);const s=P.style;if(!NEWS[s]||!(level(s)>=3||TR.active===s))return rec;
+Combo.register=function(m,e,opt){const rec=oReg(m,e,opt);const s=P.style;if(!NEWS[s]||TR.active!==s)return rec;
  const L={light:'L',heavy:'H',kick:'K',spec:'S',counter:'C',fin:'S',switch:'L'}[m.tag]||'L';P.seq=(P.seq||[]).concat([L]).slice(-6);
  for(const r of NEWS[s].recipes){const n=r.seq.length;if(P.seq.slice(-n).join()===r.seq.join()){P.seq=[];popup('TARİF: '+r.n,P.x,P.y-70,STY[s].c);Snd.sfx('style');return Object.assign({},rec||{},{dm:(rec&&rec.dm||1)*r.dm,id:'sf_'+r.n})}}
  return rec};
@@ -3196,7 +3196,7 @@ function drawStyles(){R(0,0,W,H,'rgba(0,0,0,.72)');panel(8,6,W-16,H-12);T('STİL
  line('Menzil '+stars(pr.range)+' Hız '+stars(pr.speed)+' Savunma '+stars(pr.defense)+' Kombo '+stars(pr.combo)+' Zorluk '+stars(pr.difficulty),'#aab');
  const mn=id=>(MOVES[id]&&MOVES[id].n)||id;
  line('Hafif: '+inf.light.map(mn).join(' › '));line('Ağır: '+inf.heavy.map(mn).join(' › '));line('Özel [I]: '+mn(inf.special)+' · Bitirici (5+ vuruş, Ağır): '+mn(inf.finisher));
- if(inf.recipes.length)line('Tarifler (Sv3): '+inf.recipes.map(r=>r.n+' ('+r.seq.join('-')+')').join(', '));
+ line('Kombolar: Ustalık Ağacı › Stiller sekmesi');
  if(m){const room=ROOMS[m.room]||{},met=G.mmet&&G.mmet[i];y+=4;line('Usta: '+m.name+' — '+m.personality,'#fd8');
   line(met||un?'Yer: '+(room.n||m.room)+' · Sınav: '+m.trial.desc:'Yer: '+(REGN[room.reg]||'?')+' bölgesinde bir yerde (henüz bulunmadı)','#dcb');const h=req(i);if(h&&!un)line('Önkoşul: '+h,'#f96')}
  else{y+=4;line('Başlangıç stili — Gölge Yumruk Okulu temeli.','#dcb')}
@@ -3597,13 +3597,40 @@ for(let i=0;i<STY.length;i++){NODES[i]=[];for(let k=0;k<4;k++){let n,d,gr;
   const id='st'+i+'_'+(k+1);gr=(gr||[]).slice();gr.unshift(id);
   let s=SKILLS.find(x=>x.id===id);if(!s){s={id,t:20,n,c:TCOST[k],d,grants:gr,sty:i,tier:k};SKILLS.push(s)}
   NODES[i].push(s)}}
+const CDATA=[[["k_storm", "Demir Kasırga", "LLH", "wall", 1.5], ["Kaplan Pençesi", "KHH", "pierce", 1.5], ["Kükreyen Dağ", "HKLH", "shock", 1.9]], [["k_fan", "Turna Yelpazesi", "KHU", "lift", 1.4], ["Tek Ayak Dansı", "KKL", "stun", 1.4], ["Bulut Yükselişi", "LKKH", "slow", 1.8]], [["Çatal Dil", "LLK", "stun", 1.4], ["Zehirli Isırık", "LHL", "mark", 1.5], ["k_fang", "Yılan Dişi", "CLH", "stun", 1.8]], [["k_pulse", "Ejderha Dalgası", "LLH", "qi", 1.4], ["Ejderha Pulu", "HLH", "shock", 1.5], ["Gök Ejderi", "KKHH", "lift", 1.8]], [["Merkez Hat", "LLK", "pierce", 1.4], ["k_wc", "Merkez Hattı Seli", "HHK", "stun", 1.6], ["Bin Yumruk", "LLLH", "slow", 1.8]], [["Sendeleyen Kadeh", "LKL", "heal", 1.4], ["Yalpalayan Fırtına", "KHK", "stun", 1.5], ["k_drunk", "Sekiz Kadeh", "LHH", "stun", 1.7]], [["Dal Atlayışı", "KLK", "qi", 1.4], ["k_monkey", "Ağaç Tepesi", "HHK", "lift", 1.5], ["Maymun Kralın Şakası", "LLLKK", "slow", 1.8]], [["Kanca Eller", "LLH", "pierce", 1.4], ["k_mantis", "Peygamberdevesi Dansı", "HHK", "stun", 1.6], ["Biçen Kollar", "KLLH", "shock", 1.8]], [["Kale Duvarı", "HLH", "guard", 1.4], ["Çelik Omuz", "LHH", "wall", 1.5], ["Dağ Yürüyüşü", "HHLH", "shock", 1.8]], [["Arhat Seli", "LKH", "stun", 1.4], ["Demir Kol", "LLH", "pierce", 1.5], ["Tapınak Rüzgârı", "KKS", "lift", 1.7]], [["Sekiz Kapı", "LLH", "wall", 1.5], ["Kemik Kıran", "HLH", "pierce", 1.5], ["Kral Kapısı", "KLLH", "shock", 1.9]], [["Bulut Eller", "LLL", "heal", 1.3], ["Tek Kamçı", "LHL", "stun", 1.4], ["Kuyruğu Kavra", "CHL", "guard", 1.7]], [["Daire Adımı", "LKL", "mark", 1.4], ["Sekiz Trigram", "KLH", "stun", 1.5], ["Dokuz Saray", "LLKH", "slow", 1.8]], [["Beş Element Zinciri", "LLL", "stun", 1.3], ["Ezici Yumruk", "LLH", "wall", 1.5], ["Ateş ve Su", "LHLH", "pierce", 1.8]], [["Kaplan-Turna", "LLH", "wall", 1.4], ["Kök Salmış Pençe", "HHL", "guard", 1.5], ["Beş Hayvan", "KKLH", "shock", 1.9]], [["Değirmen Kanadı", "LHH", "wall", 1.4], ["Kırbaç Kol", "LLK", "stun", 1.4], ["Kasırga Kolları", "KLHH", "shock", 1.8]], [["Pençe Kilidi", "LLH", "mark", 1.5], ["Kanat Darbesi", "KLH", "stun", 1.5], ["Kartal Dalışı", "LKHH", "pierce", 1.8]], [["Benek Yağmuru", "LLL", "qi", 1.3], ["Sinsi Pati", "LKL", "mark", 1.4], ["Gölge Avcı", "KLKK", "slow", 1.7]], [["Kalça Döndürme", "LLL", "stun", 1.3], ["Ayak Çelme", "KLH", "lift", 1.5], ["Gök Kubbe Atışı", "LLHH", "wall", 1.8]], [["Leitai Serisi", "LKH", "stun", 1.4], ["Bir-İki-Tekme", "LLK", "pierce", 1.4], ["Şampiyon Serisi", "KLLH", "slow", 1.8]], [["Okul Üçlüsü", "LLH", "qi", 1.3], ["Tekme Dersi", "KKH", "stun", 1.4], ["Usta Wen'in Dersi", "HLKH", "heal", 1.7]]];
+const CCOST=[3,5,7],KEYN={L:'Hafif',H:'Ağır',K:'Tekme',U:'Yukarı+Saldırı',S:'Ki tekniği',C:'Savuştur+Karşılık'},KEYS={L:'H',H:'A',K:'T',U:'↑',S:'Kİ',C:'SV'},KEYC={L:'#6e6658',H:'#a83228',K:'#2c5c9c',U:'#9a7a20',S:'#1f7a68',C:'#6a40a0'};
+const EFFN={wall:'düşmanı duvara savurur',lift:'düşmanı havaya kaldırır',stun:'uzun süre sersemletir',qi:'+30 ki kazandırır',heal:'+12 can yeniler',shock:'çevredeki düşmanlara şok dalgası',mark:'düşmanı işaretler: 5 sn %20 fazla hasar alır',pierce:'savunmayı ve zırhı kırar',guard:'2,5 sn aldığın hasar yarıya iner',slow:'zamanı yavaşlatır'};
+const SPEC_IDS=['k_storm','k_fan','k_fang','k_pulse','k_wc','k_drunk','k_monkey','k_mantis'];
+for(const id of SPEC_IDS){const k=RECIPES.findIndex(r=>r.id===id);if(k>=0)RECIPES.splice(k,1)}
+const COMB={};
+CDATA.forEach((L,i)=>{COMB[i]=L.map((c,ci)=>{let id,n,seq,eff,dm;if(c.length===5)[id,n,seq,eff,dm]=c;else{[n,seq,eff,dm]=c;id='cb'+i+'_'+(ci+1)}
+  const d=seq.split('').map(x=>KEYN[x]).join(' › ')+': '+EFFN[eff]+', bitiren vuruş x'+dm+' hasar.';
+  let sk=SKILLS.find(x=>x.id===id);if(!sk){sk={id};SKILLS.push(sk)}Object.assign(sk,{t:21,n,c:CCOST[ci],d,sty:i,ci,seq,eff,dm,cgrp:1});return sk})});
+// kombo algılama: isabet eden vuruşların tuş harfleri
+const LET=m=>{if(!m)return null;if(m.id==='rise'||m.id==='upper')return'U';return{light:'L',heavy:'H',kick:'K',spec:'S',counter:'C',fin:'H'}[m.tag]||null};
+const oReg=Combo.register.bind(Combo);
+Combo.register=function(m,e,opt){const first=this.instNew!==false;const newCombo=this.hits===0;let rec=oReg(m,e,opt);const p=P;if(!p||!m)return rec;
+ if(newCombo||p.cbSty!==p.style){p.cbuf='';p.cbSty=p.style}
+ const L=LET(m);if(!L||!first||(opt&&opt.proj))return rec;p.cbuf=(p.cbuf+L).slice(-6);
+ const list=(COMB[p.style]||[]).filter(c=>G.sk[c.id]).sort((a,b)=>b.seq.length-a.seq.length);
+ for(const c of list){if(p.cbuf.endsWith(c.seq)){p.cbuf='';const col=STY[p.style].c;popup('★ '+c.n+' ★',p.x,p.y-70,col);ring(p.x,p.y-20,40,col,18);Snd.sfx('bell');
+   const r=Object.assign({},rec||{},{dm:((rec&&rec.dm)||1)*c.dm,id:c.id});
+   if(c.eff==='wall')r.wall=1;if(c.eff==='lift')r.lift=1.5;if(c.eff==='stun')r.stun=2;if(c.eff==='qi')r.qi=30;
+   if(c.eff==='pierce'){r.stun=1.5;e.grd=0;e.armorBroke=1;popup('SAVUNMA KIRILDI',e.x,e.y-58,'#fd8')}
+   if(c.eff==='heal'){p.hp=Math.min(maxHp(),p.hp+12);popup('+12',p.x,p.y-56,'#6f6')}
+   if(c.eff==='mark'){e.cmark=300;popup('İŞARET',e.x,e.y-58,col)}
+   if(c.eff==='guard'){p.buffDR=.5;p.buffT=Math.max(p.buffT||0,150);popup('KORUMA',p.x,p.y-56,'#cde')}
+   if(c.eff==='slow')G.slow=Math.max(G.slow||0,40);
+   if(c.eff==='shock'){ring(e.x,e.y-20,70,col,20);shake(6);for(const o of E){if(o===e||o.st==='dead'||Math.abs(o.x-e.x)>72||Math.abs(o.y-e.y)>50)continue;o.hp-=Math.round(6+(m.dmg||8)*.6);o.stun=Math.max(o.stun||0,30);o.flash=5;HitFX.add({t:'burst',x:o.x,y:o.y-24,l:12,ml:12,r:16,c:col});if(o.hp<=0&&!(o.d&&o.d.dummy))killEnemy(o)}}
+   return r}}
+ return rec};
 const COMBO=()=>SKILLS.filter(x=>x.t===10);
 // ---- sahiplik / durum / satın alma ----
 const learned=i=>G.mode==='train'||!!(G.styles&&G.styles[i]);
 const own=s=>{if(!s)return false;if(s.relic)return Skill.own(s.id);if(s.grants)return!!G.sk[s.id];return!!G.sk[s.id]||Skill.own(s.id)};
-function reqOf(s){if(s.grants){const r=[];if(s.tier>0)r.push(NODES[s.sty][s.tier-1].id);return r}return(GREQ[s.id]||s.req||[])}
+function reqOf(s){if(s.cgrp){return s.ci>0?[COMB[s.sty][s.ci-1].id]:[]}if(s.grants){const r=[];if(s.tier>0)r.push(NODES[s.sty][s.tier-1].id);return r}return(GREQ[s.id]||s.req||[])}
 function reqName(id){const sw=id.startsWith('sw_')?Object.values(NODES).flat().find(n=>n.grants.includes(id)):null;if(sw)return sw.n+' ('+STY[sw.sty].n+')';const s=SKILLS.find(x=>x.id===id);return s?s.n:id}
-function missing(s){const m=reqOf(s).filter(r=>!(SKILLS.find(x=>x.id===r)&&own(SKILLS.find(x=>x.id===r)))&&!G.sk[r]).map(reqName);if(s.grants&&!learned(s.sty))m.unshift('Önce stili öğren: '+STY[s.sty].n);return m}
+function missing(s){const m=reqOf(s).filter(r=>!(SKILLS.find(x=>x.id===r)&&own(SKILLS.find(x=>x.id===r)))&&!G.sk[r]).map(reqName);if((s.grants||s.cgrp)&&!learned(s.sty))m.unshift('Önce stili öğren: '+STY[s.sty].n);return m}
 function state(s){if(own(s))return'own';if(s.relic)return'relic';if(missing(s).length)return'lock';return G.mp>=s.c?'ready':'poor'}
 function buy(s){if(!s)return false;if(s.relic){toast(own(s)?'Bu kadim tekniği kazandın':'Bu kadim teknik bir ustayı yenerek kazanılır');Snd.sfx(own(s)?'ui':'block');return false}
  if(G.mode==='train'){toast('Eğitim alanında teknik satın alınmaz');return false}
@@ -3648,7 +3675,7 @@ function draw(){migrate();const t=G.t;R(0,0,W,H,'rgba(4,2,6,.92)');panel(14,8,W-
  const top=52;
  if(V.tab===0)drawGen(top);else if(V.tab===1)drawSty(top);else drawCombo(top);
  if(G.treeFx&&--G.treeFx.t<=0)G.treeFx=null;
- Ptr.back();T(V.tab===1&&V.foc==='path'?'← → basamak seç   Enter öğren   Esc stillere dön':'Yön tuşları gez   Enter seç / öğren   ↑ sekmeler   Esc çık',W/2,H-20,'#888',6,'center')}
+ Ptr.back();T(V.tab===1&&V.foc==='path'?'← → basamak / kombo seç   Enter öğren   Esc stillere dön':'Yön tuşları gez   Enter seç / öğren   ↑ sekmeler   Esc çık',W/2,H-20,'#888',6,'center')}
 function drawGen(top){const px=W-Math.min(170,W*.36|0)-20,pw=W-20-px-4,lx=26,cw=Math.min(58,(px-lx-74-12-3*14)/4|0),rh=Math.min(44,(H-top-34)/GEN.length|0),ch=rh-6;
  GEN.forEach((row,ri)=>{const y=top+ri*rh;T(row[0],lx,y+ch/2-3,'#c8a060',6);let x=lx+74;
   row[1].forEach((id,ci)=>{const s=SKILLS.find(q=>q.id===id);if(!s)return;const sel=V.foc==='main'&&V.gr[0]===ri&&V.gr[1]===ci;
@@ -3672,24 +3699,35 @@ function drawSty(top){const cols=7,gw=Math.min(W*.5|0,280),tw=(gw-(cols-1)*3)/co
  const lines=[];if(inf.identity)lines.push([inf.identity,'#d8d0c4']);if(inf.strong)lines.push(['+ '+inf.strong,'#9c9']);if(inf.weak)lines.push(['− '+inf.weak,'#c99']);
  if(!L&&M){const rm=ROOMS[M.room]||{},met=G.mmet&&G.mmet[i];lines.push(['Usta: '+M.name+' — '+(met?(rm.n||M.room):(REGN[rm.reg]||'?')+' bölgesinde'),'#e8d090'])}
  for(const [tx,cc] of lines){for(const l of wrap(tx,Math.max(20,(iw-12)/3.9|0))){if(yy>top+gh-10)break;T(l.trim(),ix+6,yy,cc,6);yy+=8}}
- // 4 basamak yolu
- const py=top+gh+6,cw=Math.min(110,(W-52-3*16)/4|0),chh=Math.min(44,(H-py-34)*.42|0),tot=cw*4+16*3,px0=(W-tot)/2|0;
- NODES[i].forEach((s,k)=>{const x=px0+k*(cw+16),sel=V.foc==='path'&&V.card===k;if(k>0)arrow(x-15,py+chh/2,x-2,own(NODES[i][k-1]),col);
-  const st=node(x,py,cw,chh,s,sel,col);T((k+1)+' '+TIER[k],x+4,py+3,st==='own'?'#e8c060':'#8a7a70',5);
-  const nm=wrap(s.n,(cw-6)/4.2|0);nm.slice(0,2).forEach((l,j)=>T(l.trim(),x+cw/2,py+chh-15+j*7-(nm.length>1?4:0),st==='own'?'#ffe8b0':'#cbb',5,'center'));
+ // 4 basamak + 3 kombo
+ const CARDS=NODES[i].concat(COMB[i]||[]),py=top+gh+6,gap=6,div=16,cw=Math.min(84,(W-52-5*gap-div)/7|0),chh=Math.min(44,(H-py-34)*.44|0),tot=cw*7+gap*5+div,px0=(W-tot)/2|0;
+ const cx=k=>px0+k*(cw+gap)+(k>=4?div-gap:0);
+ T('STİL YOLU',cx(0),py-6,'#8a7a70',5);T('KOMBOLAR',cx(4),py-6,'#9a88c8',5);R(cx(4)-div/2-gap/2+1,py,1,chh,'#3a2c30');
+ if(V.card>6)V.card=6;
+ CARDS.forEach((s,k)=>{const x=cx(k),sel=V.foc==='path'&&V.card===k,isC=!!s.cgrp;
+  if(k>0&&k!==4)arrow(x-gap+1,py+chh/2,x-1,own(CARDS[k-1]),col);
+  let st;if(isC){st=state(s);const fr=st==='own'?'#e8c060':st==='ready'?(G.t%30<20?'#9a88c8':'#fff'):st==='poor'?'#6a5a50':'#2e2428';R(x,py,cw,chh,fr);R(x+1,py+1,cw-2,chh-2,st==='own'?'#24183a':'#130b11');
+    if(sel){g.globalAlpha=.25+.2*Math.sin(G.t*.15);R(x+1,py+1,cw-2,chh-2,'#fff');g.globalAlpha=1;R(x-2,py-2,cw+4,1,'#fff');R(x-2,py+chh+1,cw+4,1,'#fff');R(x-2,py-2,1,chh+4,'#fff');R(x+cw+1,py-2,1,chh+4,'#fff')}
+    const n=s.seq.length,kw=Math.min(11,(cw-6)/n-2|0),kx=x+cw/2-(n*(kw+2)-2)/2;s.seq.split('').forEach((q,j)=>{const xx=kx+j*(kw+2)|0;R(xx,py+10,kw,9,st==='lock'?'#2a2026':KEYC[q]);R(xx,py+10,kw,1,st==='lock'?'#3a3036':'rgba(255,255,255,.35)');T(KEYS[q],xx+kw/2,py+12,st==='lock'?'#666':'#fff',5,'center')});
+    if(st==='lock')pix('lock',x+cw-6,py+chh-6,'#887','#887');if(st==='own')R(x+cw-6,py+3,3,3,'#6c6');
+    if(G.treeFx&&G.treeFx.id===s.id){const q=1-G.treeFx.t/36;g.strokeStyle='rgba(200,170,255,'+(1-q)+')';g.lineWidth=2;g.beginPath();g.arc(x+cw/2,py+chh/2,10+q*24,0,6.283);g.stroke()}
+    T('KOMBO '+(s.ci+1),x+4,py+3,st==='own'?'#e8c060':'#8a7a70',5)}
+  else{st=node(x,py,cw,chh,s,sel,col);T((k+1)+' '+TIER[k],x+4,py+3,st==='own'?'#e8c060':'#8a7a70',5)}
+  const nm=wrap(s.n,(cw-4)/3.5|0);nm.slice(0,2).forEach((l,j)=>T(l.trim(),x+cw/2,py+chh-(nm.length>1?14:9)+j*6,st==='own'?'#ffe8b0':st==='lock'?'#776':'#cbb',5,'center'));
   Ptr.reg(x,py,cw,chh,()=>{if(V.foc==='path'&&V.card===k)buy(s);else{V.card=k;V.foc='path';Snd.sfx('ui')}})});
- // seçili basamak ayrıntısı
- const s=NODES[i][V.card],dy=py+chh+6,dh=H-dy-28,st=state(s);R(26,dy,W-52,dh,'#0e0910');R(26,dy,W-52,1,col);
+ // seçili kart ayrıntısı
+ const s=CARDS[V.card],dy=py+chh+6,dh=H-dy-28,st=state(s);R(26,dy,W-52,dh,'#0e0910');R(26,dy,W-52,1,s.cgrp?'#9a88c8':col);
  T(s.n,32,dy+5,'#fff',8);const chip=st==='own'?['ÖĞRENİLDİ','#3a6a3a']:st==='ready'?['ÖĞRENİLEBİLİR','#6a5020']:st==='poor'?['USTALIK YETMİYOR','#5a2a2a']:['KİLİTLİ','#3a3038'];
- const cx=32+s.n.length*4.7+8;R(cx,dy+4,chip[0].length*4.3+8,10,chip[1]);T(chip[0],cx+4,dy+6,'#fff',6);
- let ly=dy+18;const bw=Math.min(110,W*.2|0);for(const l of wrap(s.d,(W-52-bw-24)/3.9|0)){T(l.trim(),32,ly,'#d8d0c4',7);ly+=9}
- const ms=st==='lock'?missing(s):[];if(ms.length)T('Gerekli: '+ms.join(' · '),32,ly+2,'#c86',6);
- if(st!=='own'){const bx=W-26-bw-6,by=dy+dh/2-8,can=st==='ready';T(s.c+' Ustalık',bx+bw/2,by-10,G.mp>=s.c?'#e8d090':'#c66',7,'center');R(bx,by,bw,16,can?(G.t%40<30?'#8a1a14':'#a02018'):'#2a2026');R(bx,by,bw,1,can?'#ffd860':'#4a3a40');T('ÖĞREN',bx+bw/2,by+4,can?'#fff':'#665',8,'center');Ptr.reg(bx,by,bw,16,()=>buy(s))}
- // yeni stillerin tarifi bilgisi
- const SD=SF20D.styles.find(x=>x.i===i);if(SD&&SD.recipes&&SD.recipes.length&&dh>40){const r=SD.recipes[0];T('Stil tarifi (stil seviyesi 3): '+r.seq.join('-')+'  "'+r.n+'"',32,dy+dh-10,'#9a88c8',6)}}
+ const chx=32+s.n.length*4.7+8;R(chx,dy+4,chip[0].length*4.3+8,10,chip[1]);T(chip[0],chx+4,dy+6,'#fff',6);
+ let ly=dy+18;const bw=Math.min(110,W*.2|0),tw2=(W-52-bw-24)/3.9|0;
+ if(s.cgrp){let kx=32;s.seq.split('').forEach((q,j)=>{const w=KEYN[q].length*4.4+8;R(kx,ly-1,w,10,KEYC[q]);R(kx,ly-1,w,1,'rgba(255,255,255,.35)');T(KEYN[q],kx+w/2,ly+1,'#fff',6,'center');kx+=w+(j<s.seq.length-1?10:0);if(j<s.seq.length-1)T('›',kx-7,ly,'#aaa',7)});ly+=13;
+  for(const l of wrap('Etki: '+EFFN[s.eff]+'. Bitiren vuruş x'+s.dm+' hasar. Sadece '+shortN(s.sty)+' stilindeyken, vuruşlar isabet edince sayılır.',tw2)){T(l.trim(),32,ly,'#d8d0c4',6);ly+=8}}
+ else for(const l of wrap(s.d,tw2)){T(l.trim(),32,ly,'#d8d0c4',7);ly+=9}
+ const ms=st==='lock'?missing(s):[];
+ if(st!=='own'){const bx=W-26-bw-6,by=dy+dh/2-8,can=st==='ready';if(ms.length){const t='Gerekli: '+ms.join(' · ');wrap(t,(bw+8)/3.5|0).slice(0,2).forEach((l,j)=>T(l.trim(),bx+bw/2,by+20+j*7,'#c86',5,'center'))}T(s.c+' Ustalık',bx+bw/2,by-10,G.mp>=s.c?'#e8d090':'#c66',7,'center');R(bx,by,bw,16,can?(G.t%40<30?'#8a1a14':'#a02018'):'#2a2026');R(bx,by,bw,1,can?'#ffd860':'#4a3a40');T('ÖĞREN',bx+bw/2,by+4,can?'#fff':'#665',8,'center');Ptr.reg(bx,by,bw,16,()=>buy(s))}}
 function drawCombo(top){const L=COMBO(),px=W-Math.min(170,W*.36|0)-20,pw=W-20-px-4,lw=px-30,rh=15,vis=Math.max(3,(H-top-34)/rh|0);
  if(V.cs<V.scroll)V.scroll=V.cs;if(V.cs>=V.scroll+vis)V.scroll=V.cs-vis+1;
- T('Tuş sırasını tuttur, ek hasar al. Öğrenince kendiliğinden çalışır.',26,top,'#a99',6);
+ T('Genel ve geçiş kombolar. Stillere özel kombolar STİLLER sekmesinde.',26,top,'#a99',6);
  L.slice(V.scroll,V.scroll+vis).forEach((s,j)=>{const k=j+V.scroll,y=top+10+j*rh,st=state(s),sel=V.foc==='main'&&V.cs===k;
   R(26,y,lw,rh-2,sel?'rgba(150,25,25,.55)':'#140c12');if(sel)R(26,y+rh-3,lw,1,'#ffd860');pix('chain',34,y+6,st==='own'?'#ffe08a':st==='ready'?'#ff8060':'#5a4a48');
   T(s.n,44,y+3,st==='own'?'#ffe8b0':st==='lock'?'#776':'#eee',7);const dd=(s.d||'').split(':')[0];T(dd.length>34?dd.slice(0,33)+'…':dd,44+Math.min(90,lw*.36|0),y+4,'#988',5);
@@ -3708,7 +3746,7 @@ function input(){if(pressed.tree){G.scene=G.ret||'play';G.sel=0;return true}
   if(pressed.D&&r<GEN.length-1){r++;c=Math.min(c,row().length-1);Snd.sfx('ui')}
   if(pressed.L&&c>0){c--;Snd.sfx('ui')}if(pressed.R&&c<row().length-1){c++;Snd.sfx('ui')}
   V.gr=[r,c];if(ok)buy(SKILLS.find(q=>q.id===row()[c]));return true}
- if(V.tab===1){if(V.foc==='path'){if(pressed.L&&V.card>0){V.card--;Snd.sfx('ui')}if(pressed.R&&V.card<3){V.card++;Snd.sfx('ui')}if(pressed.U||pressed.D){V.foc='main';Snd.sfx('ui')}if(ok)buy(NODES[V.sty][V.card]);return true}
+ if(V.tab===1){if(V.foc==='path'){if(pressed.L&&V.card>0){V.card--;Snd.sfx('ui')}if(pressed.R&&V.card<6){V.card++;Snd.sfx('ui')}if(pressed.U||pressed.D){V.foc='main';Snd.sfx('ui')}if(ok)buy(NODES[V.sty].concat(COMB[V.sty])[V.card]);return true}
   const n=STY.length,cols=7;let i=V.sty;
   if(pressed.L&&i%cols>0)i--;if(pressed.R&&i%cols<cols-1&&i+1<n)i++;
   if(pressed.U){if(i<cols){V.foc='tabs';Snd.sfx('ui');return true}i-=cols}
@@ -3719,6 +3757,7 @@ function input(){if(pressed.tree){G.scene=G.ret||'play';G.sel=0;return true}
 // ---- oyun etkileri (yeni stiller) ----
 const oHit=Combat.hit.bind(Combat);
 Combat.hit=function(e,m,opt={}){const p=P,s=p.style;let mul=1;
+ if(e&&e.cmark>0)mul*=1.2;
  if(s>=8&&m){if(has('st'+s+'_1'))mul*=1.15;
   if(has('st'+s+'_2')){if(s===9&&(e.air||!e.on))mul*=1.25;if(s===10&&Math.abs(e.x-p.x)<24)mul*=1.2;if(s===11&&p.tcB>0)mul*=1.3;if(s===12&&e.face===p.face)mul*=1.25;
    if(s===15&&m.tag==='heavy')mul*=1.25;if(s===16&&e.mark>0)mul*=1.2;if(s===17&&(p.mom||0)>=3)mul*=1.15;if(s===18&&(e.down>0||e.air))mul*=1.2;if(s===19&&p.lastTag&&p.lastTag!==m.tag)mul*=1.1}
@@ -3727,7 +3766,7 @@ Combat.hit=function(e,m,opt={}){const p=P,s=p.style;let mul=1;
 const oHurt=hurtPlayer;hurtPlayer=function(dmg,...a){const p=P;if(p){if(p.style===8&&has('st8_2'))dmg*=.9;if(p.style===14&&has('st14_2')&&p.on)dmg*=.85}return oHurt(dmg,...a)};
 const oStart=Combat.start.bind(Combat);Combat.start=function(id){const ok=oStart(id);const p=P,m=MOVES[id];if(ok&&m&&p.style===13&&has('st13_2')&&m.tag==='light')p.sarmor=Math.max(p.sarmor||0,p.su+m.ac);return ok};
 const oPar=Parry.success.bind(Parry);Parry.success=function(p,...a){const r=oPar(p,...a);if(P&&P.style===11&&has('st11_2')){P.tcB=180;popup('AKAN SU',P.x,P.y-60,STY[11].c)}return r};
-const oUP=updatePlay;updatePlay=function(){if(P&&P.tcB>0)P.tcB--;return oUP()};
+const oUP=updatePlay;updatePlay=function(){if(P&&P.tcB>0)P.tcB--;for(const e of E)if(e.cmark>0)e.cmark--;return oUP()};
 return{draw,input,migrate,NODES,V,buy,state}})();
 drawTree=function(){TREE2.draw()};
 
