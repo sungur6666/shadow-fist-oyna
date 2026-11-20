@@ -4286,5 +4286,124 @@ MB_LINES.mb_yun=['Gölgelerin arasında yelpazem açılır. Kai, sen de hazır m
 })();
 
 </script>
+<script>
+/* ===== AÇILIŞ ARA SAHNESİ: oyun motoruyla çizilen sinematik ===== */
+const CUT={
+ on:false,t:0,skip:0,skipT:0,
+ SH:[ // [başlangıç, bitiş, sahne]
+  [0,480,'seal'],[480,900,'school'],[900,1320,'sect'],[1320,1680,'bell'],[1680,2180,'wen'],[2180,2760,'kai']],
+ SUB:[ // [başlangıç, bitiş, konuşan, metin]
+  [30,450,'','Yüz yıl önce ustalar Kara Ejderha\'yı beş mühürle bağladı.'],
+  [500,880,'','Birinci mühür, Gölge Yumruk Okulu\'nun altındaydı.'],
+  [920,1300,'','Sonra Kara Ejderha Tarikatı gülümseyerek geldi...'],
+  [1340,1660,'','...ve bir sabah okulun çanı çalmadı.'],
+  [1700,1900,'','Usta Wen avluda tek başına bekledi.'],
+  [1910,2160,'USTA WEN','Kai... git. Yumruğunu öfkeyle değil, ruhunla kaldır.'],
+  [2200,2420,'KAI','Usta... Okul yok olmuş.'],
+  [2560,2740,'KAI','Söz, Usta. Onları bulacağım.']],
+ STU:{cloth:'#c8bfae',dark:'#3a3040',skin:'#c99a72',hair:'#141018',accent:'#2e3050'},
+ SECT:{cloth:'#16121c',dark:'#0b0910',skin:'#b08868',hair:'#0a0a0a',accent:'#c01828'},
+ WEN:{cloth:'#6c6a74',dark:'#3a3842',skin:'#c8a080',hair:'#e8e8e8',accent:'#a89060'},
+ start(){this.on=true;this.t=0;this.skip=0;this.skipT=0;this.room=null;this.trail=[];this.leaves=[];this.seals=[];this.prevScene=G.scene;G.scene='cut';
+  this.vis=Object.assign({},G.visited);E=[];PR=[];FX=[];TX=[]},
+ end(){this.on=false;G.visited=this.vis||G.visited;G.dlg=null;World.enter('o_giris');P.st='free';P.vx=0;P.vy=0;G.scene='play';G.card={n:ROOM.n,t:150}},
+ shot(){for(const s of this.SH)if(this.t>=s[0]&&this.t<s[1])return s;return null},
+ use(id){if(this.room!==id){World.build(id);this.room=id;E=[];PR=[];FX=[];TX=[];BLOOD=[]}},
+ camFloor(fy){const short=RH-ROY<=H;cam.y=short?ROY-(H-(RH-ROY))/2:clamp(fy-H*.64,ROY,RH-H)},
+ camX(x){cam.x=LEN<=W?-(W-LEN)/2:clamp(x,0,LEN-W)},
+ press(){if(this.t<20)return;if(this.skip&&this.skipT>0){this.end();return}this.skip=1;this.skipT=150},
+ update(){this.t++;if(this.skipT>0)this.skipT--;
+  if(pressed.ok||pressed.jump||pressed.back||pressed.pause||pressed.light||pressed.use)this.press();
+  const t=this.t;
+  if(t===150)Snd.sfx('roar');if(t===330)Snd.sfx('boom');if(t===482)Snd.sfx('bell');if(t===2600)Snd.sfx('style');
+  const sh=this.shot();
+  if(sh&&sh[2]==='seal'){const T=t-sh[0];this.hx=W/2+Math.sin(T*.019)*175;this.hy=105+Math.sin(T*.041)*30+(T>330?(T-330)*.4:0);this.trail.unshift([this.hx,this.hy]);if(this.trail.length>200)this.trail.pop()}
+  if(sh&&sh[2]==='wen'){if(this.leaves.length<30&&t%4===0)this.leaves.push({x:W+10,y:60+Math.random()*220,v:1+Math.random()*1.6,p:Math.random()*6});
+   for(const l of this.leaves){l.x-=l.v;l.y+=Math.sin(t*.08+l.p)*.5+.15}this.leaves=this.leaves.filter(l=>l.x>-20)}
+  if(t>=this.SH[this.SH.length-1][1])this.end()},
+ // ---- yardımcı çizimler ----
+ pc(x,y,r,c){x=Math.round(x);y=Math.round(y);for(let dy=-r;dy<=r;dy++){const w=Math.round(Math.sqrt(r*r-dy*dy));R(x-w,y+dy,w*2+1,1,c)}},
+ fighter(o){drawFighter(Object.assign({flash:0,gy:o.y,s:1,t:G.t},o))},
+ zoom(z,fx,fy){g.translate(fx,fy);g.scale(z,z);g.translate(-fx,-fy)},
+ world(){Parallax.bg();g.save();g.translate(Math.round(-cam.x),Math.round(-cam.y));BackWall.draw();drawTiles();Props.draw();drawObjs()},
+ mp(i){const C=['#d84030','#e8e0d0','#60c060','#e0b040','#8060e0'],c=(typeof STY!=='undefined'&&STY[i]&&STY[i].c)||C[i];return Object.assign({},PAL.kai,{cloth:shade(c,-40),dark:shade(c,-70),accent:c,hair:'#c8c8c8'})},
+ ease(k){k=clamp(k,0,1);return k*k*(3-2*k)},
+ // ---- sahneler ----
+ seal(lt){const T=lt;this.use('k_kule');cam.x=0;cam.y=0;this.camFloor(240);
+  g.save();this.zoom(1.08-.06*this.ease(T/480),W/2,H*.4);Parallax.bg();g.restore();
+  R(0,0,W,H,'rgba(10,4,20,.35)');
+  // dağ sırtı
+  const gy=H-58;for(let x=0;x<W;x+=4){const h=Math.round(10+Math.sin(x*.021)*6+Math.sin(x*.07)*3);R(x,gy-h+14,4,H,'#0c0812')}
+  R(150,gy-6,340,H,'#0c0812');for(let x=150;x<490;x+=4)R(x,gy-6,4,1,'#2a1c3a');
+  // ejderha
+  const ap=this.ease(T/110)*(1-this.ease((T-360)/70)),hx=this.hx||W/2,hy=this.hy||100;
+  if(ap>0.01){g.save();g.globalAlpha=ap;
+   for(let i=this.trail.length-1;i>=4;i-=3){const q=this.trail[i],r=Math.max(4,20-i*.08);this.pc(q[0],q[1]+1,r+2,'#3a1a4c');this.pc(q[0],q[1],r,'#160b22');if(i%9===0){R(q[0]-1,q[1]-r-4,3,5,'#4a2260')}}
+   this.pc(hx,hy,24,'#3a1a4c');this.pc(hx,hy,22,'#160b22');const d=Math.sign(Math.cos(T*.019))||1;
+   R(Math.min(hx+d*14,hx+d*34),hy+2,20,9,'#160b22');R(Math.min(hx+d*14,hx+d*32),hy+12,18,4,'#24102f');R(Math.min(hx+d*30,hx+d*34),hy+6,4,2,'#e8e0d0');
+   R(hx-12,hy-30,4,12,'#4a2260');R(hx+7,hy-31,4,13,'#4a2260');
+   const ey=T>330?'#ff9a5a':'#ff2a2a';R(hx+d*9-2,hy-6,4,3,ey);lGlow(hx+d*9,hy-5,18,'255,40,30',.6*ap);
+   g.restore()}
+  // ustalar
+  for(let i=0;i<5;i++){const x=200+i*60,f=x<W/2?1:-1;this.fighter({x,y:gy-6,face:f,pose:T>170?'atk':'idle',kind:'palm',aph:1,ak:1,pal:this.mp(i),kit:'kai',si:i,hand:HANDS[i],t:G.t+i*9})}
+  // mühürler
+  for(let i=0;i<5;i++){const st=180+i*26,k=this.ease((T-st)/90);if(T<st)continue;const x0=200+i*60,y0=gy-40,q=this.trail[Math.min(this.trail.length-1,12+i*24)]||[hx,hy],
+    x=x0+(q[0]-x0)*k,y=y0+(q[1]-y0)*k,r=9;lGlow(x,y,26,'255,210,90',.6);this.pc(x,y,r,'#f0c860');this.pc(x,y,r-2,'#3a2410');this.pc(x,y,2,'#ffe8a0');
+    for(let a=0;a<8;a++){const an=a*Math.PI/4+T*.05;R(Math.round(x+Math.cos(an)*(r-1)),Math.round(y+Math.sin(an)*(r-1)),1,1,'#fff2c0')}
+    if(k>=1&&T<420){g.save();g.globalAlpha=.6;g.strokeStyle='#f0c860';g.lineWidth=1;g.beginPath();g.moveTo(x0,y0);g.lineTo(x,y);g.stroke();g.restore()}}
+  if(T>325&&T<345){R(0,0,W,H,'rgba(255,230,170,'+(1-(T-325)/20)*.8+')')}
+ },
+ students(lt,face,bowK){for(let i=0;i<8;i++){const x=410+i*24+(i%2)*4,b=bowK*(0.5+0.5*Math.sin(Math.min(1,lt/90)*Math.PI/2));
+   this.fighter({x,y:240,face,pose:'idle',pal:this.STU,kit:'grunt',rot:b*.5,t:G.t+i*11})}},
+ school(lt){this.use('school');this.camX(150+lt*.2);this.camFloor(240);
+  g.save();this.zoom(1.1-.08*this.ease(lt/420),W/2,H*.6);this.world();
+  this.fighter({x:340,y:240,face:1,pose:'idle',pal:this.WEN,kit:'monk'});
+  const bow=lt>70&&lt<330?1:0;this.students(lt,-1,bow?this.ease((lt-70)/40)-this.ease((lt-290)/40):0);
+  g.restore();g.restore()},
+ sect(lt){this.use('school');this.camX(230+lt*.22);this.camFloor(240);
+  g.save();this.world();
+  this.fighter({x:340,y:240,face:1,pose:lt>140?'block':'idle',pal:this.WEN,kit:'monk'});
+  this.students(lt,lt>60?1:-1,0);
+  for(let i=0;i<4;i++){const x0=1020+i*30,x=Math.max(650+i*28,x0-lt*1.4),walk=x>650+i*28;WPH=walk?(G.t*.06+i*.3):null;
+   this.fighter({x,y:240,face:-1,pose:walk?'walk':'idle',pal:this.SECT,kit:'grunt',vx:walk?-1:0,t:G.t+i*7})}WPH=null;
+  g.restore();g.restore()},
+ bell(lt){this.use('o_kule');this.camX(0);this.camFloor(240);const z=1.55-.5*this.ease(lt/360),bx=430,by=ROY+74;
+  g.save();this.zoom(z,bx-cam.x,by-cam.y);Parallax.bg();g.save();g.translate(Math.round(-cam.x),Math.round(-cam.y));BackWall.draw();drawTiles();Props.draw();
+  R(bx-1,ROY+16,3,by-ROY-22,'#4a3018');R(bx-14,by-8,28,3,'#3a2414');R(bx-14,by-8,28,1,'#6a4424');
+  const rows=[10,14,16,18,18,20,20,22,22,24,24,26,28,30,32,34,36,34];rows.forEach((w,i)=>{R(bx-w/2,by-6+i,w,1,i<2?'#8a6a30':'#a07a34');R(bx-w/2,by-6+i,2,1,'#5a4018');R(bx+w/2-3,by-6+i,3,1,'#c8a050')});
+  R(bx-16,by+5,32,2,'#6a4a1c');R(bx-18,by+9,36,1,'#c8a050');R(bx-2,by+12,4,6,'#4a3014');
+  // sis
+  for(let i=0;i<6;i++){const x=((i*113+lt*.3)%(LEN+160))-80,y=215+Math.sin(i+lt*.01)*6,gr=g.createRadialGradient(x,y,2,x,y,60);gr.addColorStop(0,'rgba(190,200,225,.10)');gr.addColorStop(1,'rgba(190,200,225,0)');g.fillStyle=gr;g.fillRect(x-60,y-60,120,120)}
+  g.restore();g.restore()},
+ wen(lt){this.use('school');this.camX(260);this.camFloor(240);
+  g.save();this.zoom(1+.15*this.ease((lt-200)/280),W/2+60,H*.55);this.world();
+  this.fighter({x:580,y:240,face:-1,pose:'idle',pal:this.WEN,kit:'monk'});
+  g.restore();g.restore();
+  for(const l of this.leaves)R(Math.round(l.x),Math.round(l.y),2,1,l.p>3?'#c86a24':'#a8401c')},
+ kai(lt){this.use('o_giris');this.camX(0);this.camFloor(240);const kx=270,z=1.9-.9*this.ease((lt-260)/260);
+  g.save();this.zoom(z,kx-cam.x,240-cam.y-20);this.world();
+  let pose='dead',kind='punch',aph=0,ak=0;if(lt>150)pose='hurt';if(lt>230)pose='idle';if(lt>380){pose='atk';aph=1;ak=1}
+  if(lt>380){const a=.35+.25*Math.sin(G.t*.2);lGlow(kx+8,240-30,30,'255,190,90',a)}
+  this.fighter({x:kx,y:240,face:1,pose,kind,aph,ak,pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0],sm:this.sm||(this.sm={})});
+  g.restore();g.restore();
+  if(lt>420){const a=this.ease((lt-420)/60);g.save();g.globalAlpha=a;T('SHADOW FIST',W/2,62,'#e8d090',30,'center');T('Kara Ejderha\'nın Gölgesi',W/2,98,'#b8a070',10,'center');g.restore()}},
+ draw(){const s=this.shot();if(!s){R(0,0,W,H,'#000');return}const lt=this.t-s[0],len=s[1]-s[0];
+  this[s[2]](lt);
+  // geçiş kararması
+  const fa=Math.max(0,1-lt/22,1-(len-lt)/22);if(fa>0)R(0,0,W,H,'rgba(0,0,0,'+Math.min(1,fa)+')');
+  // sinema bantları
+  R(0,0,W,30,'#000');R(0,H-38,W,38,'#000');
+  for(const q of this.SUB){if(this.t<q[0]||this.t>=q[1])continue;const k=this.t-q[0],n=Math.min(q[3].length,Math.floor(k*.9)),a=Math.min(1,(q[1]-this.t)/15);
+   g.save();g.globalAlpha=a;if(q[2]){T(q[2],W/2,H-34,'#e8a040',7,'center')}T(q[3].slice(0,n),W/2,H-(q[2]?24:28),'#efe4c8',8,'center');g.restore()}
+  if(this.skipT>0)T('Geçmek için tekrar bas',W-8,10,'#c8b890',7,'right');else if(this.t>40)T('GEÇ ▸',W-8,10,'#6a6050',7,'right')}
+};
+(()=>{
+ const oStep=step;step=function(){if(G.scene==='cut'){G.t++;CUT.update();return}return oStep.apply(this,arguments)};
+ const oRender=render;render=function(){if(G.scene==='cut'){g.setTransform(S,0,0,S,0,0);R(0,0,W,H,'#000');Ptr.R=[];CUT.draw();return}return oRender.apply(this,arguments)};
+ const oSG=startGame;startGame=function(load){const r=oSG.apply(this,arguments);if(!load&&G.mode==='story'&&!G.cp){G.dlg=null;CUT.start()}return r};
+ document.addEventListener('pointerdown',()=>{if(G.scene==='cut')CUT.press()},true);
+})();
+
+</script>
 </body></html>
 
