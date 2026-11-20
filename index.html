@@ -3350,7 +3350,72 @@ const FINC=[
    {m:'hv_7',d:22,gap:30,r:{dx:-12}},
    {m:'counter7',d:18,gap:20,r:{dx:-6}},
    {m:'hv2_7',d:22,gap:18,r:{dx:4,h:22,dy:6}}],
-  fin:{m:'hv2_7',gap:16,h:10},L:{vx:1,vy:6.5,t:'slam'}}];
+  fin:{m:'hv2_7',gap:16,h:10},L:{vx:1,vy:6.5,t:'slam'}},
+ {n:'Dağ Devirme',beats:[
+   {m:'ib_l1',d:26,gap:22,fx:'armor',nohit:1},
+   {m:'ib_h1',d:26,gap:14,r:{dx:12},fx:'stomp'},
+   {m:'ib_h2',d:20,gap:16,r:{dx:5}}],
+  fin:{m:'ib_fin',gap:16},L:{vx:1.2,vy:6,t:'slam'}},
+ {n:'Tapınak Kapısı',beats:[
+   {m:'sl_l1',d:14,gap:22,r:{dx:3}},{m:'sl_l2',d:14,gap:22,r:{dx:3}},
+   {m:'sl_h1',d:24,gap:22,r:{dx:3,h:34,dy:10},fx:'dust'},
+   {m:'sl_sp',d:30,gap:20,h:26,dy:6,air:1,n:4,r:{dx:3,h:40,dy:4}}],
+  fin:{m:'sl_fin',gap:18,h:30,air:1},L:{vx:5.4,vy:-3,t:'fly'}},
+ {n:'Kral Kırıcı',beats:[
+   {m:'bj_l1',d:20,gap:16,r:{dx:6},fx:'stomp'},
+   {m:'bj_l2',d:22,gap:12,r:{dx:12},fx:'stomp'},
+   {m:'bj_h2',d:22,gap:14,r:{dx:3,down:24}}],
+  fin:{m:'bj_fin',gap:10,fx:'stomp'},L:{vx:8.2,vy:-1.4,t:'fly'}},
+ {n:'Büyük Tavan Kırılışı',beats:[
+   {m:'tc_l2',d:28,gap:26,fx:'yin',r:{dx:4}},
+   {m:'tc_h1',d:26,gap:30,r:{dx:-12},fx:'yin'},
+   {m:'tc_ct',d:30,gap:16,r:{over:1}}],
+  fin:{m:'tc_fin',gap:20,fx:'yin'},L:{vx:3.2,vy:-5.6,t:'fly'}},
+ {n:'Dairenin Kapanışı',beats:[
+   {m:'bg_l1',d:20,gap:22,side:1,fx:'circle',r:{dx:-2}},
+   {m:'bg_l3',d:20,gap:22,side:1,fx:'circle',r:{dx:-2}},
+   {m:'bg_sp',d:28,gap:20,side:1,n:3,fx:'circle',r:{dx:2}}],
+  fin:{m:'bg_fin',gap:18},L:{vx:5,vy:-2.8,t:'fly'}},
+ {n:'Beş Element',beats:[
+   {m:'xy_l1',d:16,gap:18,r:{dx:12}},{m:'xy_l3',d:18,gap:18,r:{dx:12}},
+   {m:'xy_fin',d:30,gap:18,n:5,r:{dx:16}},
+   {m:'xy_l2',d:20,gap:16,r:{dx:4,h:22,dy:6}}],
+  fin:{m:'xy_h1',gap:16},L:{vx:6.6,vy:-2,t:'fly'}},
+ {n:'Beş Hayvan',beats:[
+   {m:'hg_l1',d:20,gap:22,fx:'claw',r:{dx:5}},
+   {m:'hg_l2',d:18,gap:22,r:{dx:4}},
+   {m:'hg_fin',d:32,gap:20,n:5,fx:'root',r:{dx:6}}],
+  fin:{m:'hg_l3',gap:20,fx:'claw'},L:{vx:5.4,vy:-2,t:'fly'}},
+ {n:'Kasırga Kolları',beats:[
+   {m:'cl_l2',d:20,gap:32,r:{dx:6}},
+   {m:'cl_l3',d:20,gap:32,r:{dx:6}},
+   {m:'cl_fin',d:32,gap:28,n:5,fx:'wind',r:{dx:8}}],
+  fin:{m:'cl_l1',gap:26},L:{vx:2.8,vy:-6.6,t:'fly'}},
+ {n:'Yetmiş İki Kavrayış',beats:[
+   {m:'ec_l1',d:18,gap:22,fx:'claw',r:{dx:3}},
+   {m:'ec_h1',d:22,gap:16,fx:'mark',r:{dx:-4}},
+   {m:'ec_fin',d:30,gap:16,n:4,fx:'claw',r:{dx:2,h:30,dy:10}}],
+  fin:{m:'ec_h1',gap:14,h:20},L:{vx:.6,vy:7,t:'slam'}},
+ {n:'Gölge Leopar',beats:[
+   {m:'lp_l1',d:12,gap:20,side:1,fx:'after',r:{dx:2}},{m:'lp_l2',d:12,gap:20,side:1,fx:'after',r:{dx:-2}},
+   {m:'lp_l3',d:12,gap:20,side:1,fx:'after',r:{dx:2}},
+   {m:'lp_sp',d:30,gap:18,n:6,fx:'after',r:{dx:4}}],
+  fin:{m:'lp_h2',gap:16},L:{vx:4,vy:-4.8,t:'fly'}},
+ {n:'Gök Kubbe Atışı',beats:[
+   {m:'sj_l1',d:20,gap:16,r:{dx:-4}},
+   {m:'sj_h2',d:22,gap:18,r:{dx:2,down:30}},
+   {m:'sj_l3',d:30,gap:14,r:{over:1}}],
+  fin:{m:'sj_fin',gap:14},L:{vx:3.4,vy:-6,t:'fly',back:1}},
+ {n:'Leitai Bitirişi',beats:[
+   {m:'sd_l1',d:12,gap:22,r:{dx:2}},{m:'sd_l2',d:12,gap:22,r:{dx:2}},
+   {m:'sd_l3',d:20,gap:24,r:{dx:6}},
+   {m:'sd_h2',d:20,gap:14,r:{dx:3,h:26,dy:8}}],
+  fin:{m:'sd_fin',gap:20,h:12},L:{vx:5.6,vy:-3,t:'spin'}},
+ {n:'Okulun Son Dersi',beats:[
+   {m:'l1',d:14,gap:22,r:{dx:2}},{m:'l2',d:14,gap:22,r:{dx:3}},
+   {m:'kk2',d:20,gap:24,r:{dx:6}},
+   {m:'upper',d:22,gap:16,r:{dx:3,h:28,dy:8}}],
+  fin:{m:'tm_fin',gap:18,h:6},L:{vx:5,vy:-2.6,t:'fly'}}];
 const FIN={on:false,e:null,steps:[],si:0,t:0,z:1,zt:1,bar:0,fx:0,fy:0,tmp:null,name:'',sub:'',dark:0,boss:false,sun:0,
  NAMES:FINC.map(c=>c.n),
  can(e){if(this.on||!e||e._fin||G.mode!=='story'||G.trans||!P||P.hp<=0||P.st==='dead')return false;const d=e.d||{};
@@ -3364,7 +3429,7 @@ const FIN={on:false,e:null,steps:[],si:0,t:0,z:1,zt:1,bar:0,fx:0,fy:0,tmp:null,n
   const sty=p.style|0,C=FINC[sty]||FINC[0];this.C=C;this.sty=sty;
   this.name=this.boss?'SON DARBE · '+C.n:C.n;this.sub=STY[sty]?STY[sty].n+' BİTİRİCİSİ':'BİTİRİCİ';this.col=STY[sty]?STY[sty].c:'#ffd27a';
   e.vx=0;e.vy=0;e.air=false;e.stun=0;e.down=0;e.grd=0;e.flash=0;if(!e.on){const fy=floorBelow(e.x,e.y-6);if(fy<RH)e.y=fy}e.on=true;
-  this.fl=e.y;this.eh=0;this.etw=null;this.kh=0;this.esc=(e.d.s||1)>1.3?.65:1;
+  this.fl=e.y;this.eh=0;this.etw=null;this.edown=0;this.kh=0;this.esc=(e.d.s||1)>1.3?.65:1;
   let f=Math.sign(e.x-p.x)||p.face||1;
   if(solidAt(e.x-f*30,e.y-10)||!supportAt(e.x-f*30,e.y))f=-f;
   this.f=f;e.face=-f;this.k0={x:p.x,y:p.y};this.k1={x:clamp(e.x-f*24,12,LEN-12),y:e.y};
@@ -3391,15 +3456,26 @@ const FIN={on:false,e:null,steps:[],si:0,t:0,z:1,zt:1,bar:0,fx:0,fy:0,tmp:null,n
  hitAt(b,d){const m=this.mv(b.m),tot=m.su+m.ac+m.rc;return Math.max(1,Math.round(d*(m.su+m.ac*.5)/tot/1.05))},
  hit(b,mul){const p=P,e=this.e,m=this.mv(b.m),dir=this.f,hy=this.fl-this.eh-24*(e.d.s||1),hx=e.x-dir*6;
   HitFX.hit(e,m,Math.round(m.dmg*(mul||1)),dir,hx,hy,this.col);Snd.sfx(m.sfx||'punch');e.flash=5;e.stun=30;shake(this.boss?6:4);FX2.light(hx,hy,60,this.col,10);
-  const r=b.r||{};if(r.dx||r.h||this.eh>0){const tx=e.x+dir*(r.dx||0);this.etw={x0:e.x,x1:solidAt(tx+dir*8,this.fl-12)?e.x:tx,h0:this.eh,h1:(r.h||0)*this.esc,dy:(r.dy||0)*this.esc,t:0,d:16}}
+  const r=b.r||{};if(r.over){const tx=clamp(p.x-dir*22,12,LEN-12);this.etw={x0:e.x,x1:tx,h0:this.eh,h1:0,dy:48*this.esc,t:0,d:22,flip:1};Snd.sfx('swing')}else if(r.dx||r.h||this.eh>0){const tx=e.x+dir*(r.dx||0);this.etw={x0:e.x,x1:solidAt(tx+dir*8,this.fl-12)?e.x:tx,h0:this.eh,h1:(r.h||0)*this.esc,dy:(r.dy||0)*this.esc,t:0,d:16}}
+  if(r.down)this.edown=r.down;
+  if(b.fx==='stomp')this.stomp(p.x,this.fl);
+  if(b.fx==='yin')this.yin(hx,hy);
+  if(b.fx==='mark'){ring(e.x,hy,16,'#f33',20);popup('KİLİT!',e.x,hy-26,'#f55');e.mark=120}
+  if(b.fx==='wind')for(let i=0;i<6;i++)HitFX.add({t:'line',x:hx+rnd(-10,10),y:hy+rnd(-14,14),vx:dir*rnd(2,4),l:10,ml:10,c:this.col,len:16});
   if(b.fx==='claw')for(let i=0;i<3;i++)HitFX.add({t:'claw',x:hx+rnd(-4,4),y:hy+(i-1)*7,l:14,ml:14,dir,c:this.col,s:1.3});
   if(b.fx==='ki'){HitFX.add({t:'wave',x:hx,y:hy,l:14,ml:14,r:30,dir,c:this.col});ring(hx,hy,26,this.col,14)}
   if(b.fx==='dust'){FX2.side(e.x,this.fl,-1,4,1.3);FX2.side(e.x,this.fl,1,4,1.3)}
   if(b.fx==='feather')for(let i=0;i<10;i++)FX.push({x:hx,y:hy,vx:rnd(-2,2),vy:rnd(-2,1),l:rnd(20,36),c:i%2?'#fff':'#dde',nog:1});
   this.hold=b.n?1:4},
- enemyTick(){const e=this.e,w=this.etw;if(w){w.t++;const k=Math.min(1,w.t/w.d);e.x=w.x0+(w.x1-w.x0)*this.ez(k);this.eh=w.h0+(w.h1-w.h0)*k+Math.sin(Math.PI*k)*w.dy;if(k>=1)this.etw=null}
+ enemyTick(){const e=this.e,w=this.etw;if(w){w.t++;const k=Math.min(1,w.t/w.d);e.x=w.x0+(w.x1-w.x0)*this.ez(k);this.eh=w.h0+(w.h1-w.h0)*k+Math.sin(Math.PI*k)*w.dy;if(k>=1){if(w.flip){this.f=-this.f;e.face=-this.f;P.face=this.f;shake(10);this.stomp(e.x,this.fl);Snd.sfx('heavy')}this.etw=null}}
+  if(this.edown>0){this.edown--;e.down=this.edown>0?this.edown:0}
   e.y=this.fl-this.eh;e.air=this.eh>3;e.on=!e.air;if(this.eh>3)e.stun=30},
- beatFx(b,t,d){const p=P,c=this.col;
+ stomp(x,y){shake(7);FX2.side(x,y,-1,4,1.4);FX2.side(x,y,1,4,1.4);FX.push({x,y,vx:0,vy:0,l:40,ml:40,crack:1,seed:G.t});Snd.sfx('heavy')},
+ yin(x,y){for(let i=0;i<14;i++){const a=i/14*6.283;FX.push({x:x+Math.cos(a)*14,y:y+Math.sin(a)*14,vx:-Math.sin(a)*1.6,vy:Math.cos(a)*1.6,l:16,c:i%2?'#f4f4f4':'#303040',nog:1})}ring(x,y,20,'#e8eef8',14)},
+ beatFx(b,t,d){const p=P,c=this.col,e=this.e;
+  if(b.fx==='armor'){if(t===Math.round(d*.35)){const hy=p.y-26;for(let i=0;i<10;i++)FX.push({x:p.x+this.f*6,y:hy,vx:-this.f*rnd(.5,3),vy:rnd(-2.5,1),l:rnd(10,18),c:i%2?'#fff':'#bcc',nog:1});ring(p.x,hy,22,'#c8ccd8',16);HitFX.add({t:'shock',x:p.x,y:hy,l:14,ml:14,r:26,c:'#dde'});popup('DEMİR BEDEN!',p.x,p.y-56,'#cfd4e4');Snd.sfx('parry');shake(5);e.flash=3}}
+  if(b.fx==='circle'&&t%2===0){const a=t/d*6.283,r=26;FX.push({x:e.x+Math.cos(a)*r,y:this.fl-1+Math.sin(a)*4,vx:0,vy:0,l:18,c:c,nog:1})}
+  if(b.fx==='root'&&t%6===0){FX2.side(p.x,p.y,-1,1,.9);FX2.side(p.x,p.y,1,1,.9)}
   if(b.fx==='charge'){const hx=p.x+this.f*14,hy=p.y-26;for(let i=0;i<2;i++){const a=Math.random()*6.283,r=rnd(20,36);FX.push({x:hx+Math.cos(a)*r,y:hy+Math.sin(a)*r,vx:-Math.cos(a)*r/10,vy:-Math.sin(a)*r/10,l:10,c:i%2?'#fff':c,nog:1})}
    if(t%8===0)ring(hx,hy,8+t/3,c,10);if(t===2)Snd.sfx('spec');FX2.light(hx,hy,40+t,c,4)}
   if(b.fx==='stumble'&&t===4)popup('hık!',p.x,p.y-52,'#f8a');
@@ -3432,8 +3508,9 @@ const FIN={on:false,e:null,steps:[],si:0,t:0,z:1,zt:1,bar:0,fx:0,fy:0,tmp:null,n
   if(t===0){this.sun=0;const hy=this.fl-this.eh-24*(e.d.s||1);HitFX.hit(e,m,m.dmg*3,f,e.x-f*6,hy,this.col);HitFX.flash=6;HitFX.flashC='#fff';shake(this.boss?14:10);Snd.sfx('kill');ring(e.x,hy,50,'#fff',20);ring(e.x,hy,30,this.col,16);
    for(let i=0;i<24;i++)FX.push({x:e.x,y:hy,vx:f*rnd(1,5),vy:rnd(-3,1),l:rnd(16,30),c:i%2?'#5a0810':'#8a1018'});
    if(b.fx==='blast'){for(let i=0;i<4;i++)HitFX.add({t:'wave',x:p.x+f*(16+i*14),y:p.y-24,l:16+i*2,ml:16+i*2,r:34+i*8,dir:f,c:this.col});for(let i=0;i<16;i++)FX.push({x:p.x+f*18,y:p.y-24+rnd(-10,10),vx:f*rnd(3,7),vy:rnd(-.6,.6),l:rnd(12,22),c:i%2?'#fff':this.col,nog:1});FX2.light(p.x+f*30,p.y-24,110,this.col,20)}
+   if(b.fx==='stomp')this.stomp(p.x,this.fl);if(b.fx==='yin')this.yin(e.x,hy);
    if(b.fx==='inch'){ring(e.x,hy,40,this.col,18);HitFX.add({t:'shock',x:e.x,y:hy,l:18,ml:18,r:44,c:'#fff'})}
-   const sc=this.boss?.7:1;e.air=true;e.on=false;e.vx=f*L.vx*sc;e.vy=L.vy*sc;e.y=this.fl-this.eh;this.etw=null}
+   const sc=this.boss?.7:1;e.air=true;e.on=false;e.vx=(L.back?-f:f)*L.vx*sc;if(L.back){this.etwBack=1}e.vy=L.vy*sc;e.y=this.fl-this.eh;this.etw=null}
   if(e.air){const sl=t<16?.35:1;e.vy+=.22*sl;let nx=e.x+e.vx*sl;if(solidAt(nx+Math.sign(e.vx)*8,e.y-14)){e.vx=-e.vx*.25;shake(8);sparks(e.x,e.y-20,'#a98',10,3);nx=e.x}e.x=nx;e.y+=e.vy*sl;
    if(L.t==='spin')e.t+=2;
    const fy=floorBelow(e.x,e.y-12);if(e.vy>0&&e.y>=fy){e.y=fy;e.air=false;e.on=true;e.down=60;Snd.sfx('heavy');
