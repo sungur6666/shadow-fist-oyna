@@ -2926,7 +2926,7 @@ const Touch={on:false,avail:false,tsize:.5,vib:true,
    if(a==='cyc')this.stb=b;b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);this.btns.push({b,r,bt,d,top})};
   B('ZIPLA','','jump',16,18,70);B('YUMRUK','hafif','light',98,12,60);B('TEKME','','kick',26,100,60);B('AĞIR','yumruk','heavy',100,86,56);
   B('KAÇ','','dodge',174,14,50);B('BLOK','savuş','block',168,76,52);B('Kİ','özel','spec',104,156,46);B('İKSİR','','heal',38,172,46);
-  B('MENÜ','','back',null,0,26,'t','c0');B('HARİTA','','map',null,0,26,'t','c1');B('LİSTE','','tree',null,0,26,'t','c2');B('STİLLER','','styles',null,0,26,'t','c3');B('STİL','değiştir','cyc',172,138,48);B('E','al/konuş','use',40,226,44);
+  B('MENÜ','','back',null,0,26,'t','c0');B('HARİTA','','map',null,0,26,'t','c1');B('LİSTE','','tree',null,0,26,'t','c2');B('STİLLER','','styles',null,0,26,'t','c3');B('STİL','değiştir','cyc',172,138,48);const IOSD=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);B('E','al/konuş','use',IOSD?{l:40}:40,IOSD?156:226,44);
   // canvas tap = confirm in menus & dialogs (title has its own tap handling)
   document.addEventListener('contextmenu',e=>e.preventDefault());
   // first touch: fullscreen + landscape lock (where allowed)
@@ -2934,7 +2934,7 @@ const Touch={on:false,avail:false,tsize:.5,vib:true,
   addEventListener('pointerdown',fs,{once:true});
   addEventListener('resize',()=>{this.layout();rest()});this.layout();rest();setInterval(()=>this.vis(),150)},
  layout(){const s=this.sz();for(const o of this.btns||[]){const st=o.b.style;if(o.top){const w=46*s,i=+o.top[1];st.width=w+'px';st.height=o.d*s+'px';st.top='calc(4px + env(safe-area-inset-top))';st.left=`calc(50% + ${(i-1.0)*(w+5)}px)`;st.fontSize=9*s+'px'}
-   else{st.width=st.height=o.d*s+'px';st.right=`calc(${o.r*s}px + env(safe-area-inset-right))`;st.bottom=`calc(${o.bt*s}px + env(safe-area-inset-bottom))`;st.fontSize=(o.d>55?11:10)*s+'px'}}},
+   else{st.width=st.height=o.d*s+'px';if(typeof o.r==='object'){st.right='auto';st.left=`calc(${o.r.l*s}px + env(safe-area-inset-left))`}else st.right=`calc(${o.r*s}px + env(safe-area-inset-right))`;st.bottom=`calc(${o.bt*s}px + env(safe-area-inset-bottom))`;st.fontSize=(o.d>55?11:10)*s+'px'}}},
  vis(){if(!this.box)return;const sc=G.scene,show=this.on&&(sc==='play'||sc==='dialog');this.box.style.display=show?'block':'none';if(this.jz)this.jz.style.display=sc==='play'?'block':'none';if(this.fb)this.fb.style.display=this.avail&&!this.on&&sc==='play'?'block':'none';if(this._s&&!show)for(const a of['L','R','U','D','run','block','jump','light','heavy','kick','dodge'])keys[a]=false;this._s=show;if(this.stb&&show&&P){const c=STY[P.style].c;this.stb.style.borderColor=c;this.stb.style.color=c}}};
 Touch.init();
 
