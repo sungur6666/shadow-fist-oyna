@@ -4306,7 +4306,7 @@ const CUT={
  STU:{cloth:'#c8bfae',dark:'#3a3040',skin:'#c99a72',hair:'#141018',accent:'#2e3050'},
  SECT:{cloth:'#16121c',dark:'#0b0910',skin:'#b08868',hair:'#0a0a0a',accent:'#c01828'},
  WEN:{cloth:'#6c6a74',dark:'#3a3842',skin:'#c8a080',hair:'#e8e8e8',accent:'#a89060'},
- start(){this.on=true;this.t=0;this.skip=0;this.skipT=0;this.room=null;this.trail=[];this.leaves=[];this.seals=[];this.prevScene=G.scene;G.scene='cut';
+ start(){this.on=true;this.t=0;this.skip=0;this.skipT=0;this.room=null;this.trail=[];this.leaves=[];this.seals=[];this.smoke=[];this.dragPts=null;this.prevScene=G.scene;G.scene='cut';
   this.vis=Object.assign({},G.visited);E=[];PR=[];FX=[];TX=[]},
  end(){this.on=false;G.visited=this.vis||G.visited;G.dlg=null;World.enter('o_giris');P.st='free';P.vx=0;P.vy=0;G.scene='play';G.card={n:ROOM.n,t:150}},
  shot(){for(const s of this.SH)if(this.t>=s[0]&&this.t<s[1])return s;return null},
@@ -4319,7 +4319,8 @@ const CUT={
   const t=this.t;
   if(t===150)Snd.sfx('roar');if(t===330)Snd.sfx('boom');if(t===482)Snd.sfx('bell');if(t===2600)Snd.sfx('style');
   const sh=this.shot();
-  if(sh&&sh[2]==='seal'&&t===150)G.shake=6;
+  if(G.shake>0)G.shake=G.shake>.3?G.shake*.9:0;
+  if(sh&&sh[2]==='seal'&&(t===150||t===330))G.shake=t===150?7:5;
   if(sh&&sh[2]==='wen'){if(this.leaves.length<30&&t%4===0)this.leaves.push({x:W+10,y:60+Math.random()*220,v:1+Math.random()*1.6,p:Math.random()*6});
    for(const l of this.leaves){l.x-=l.v;l.y+=Math.sin(t*.08+l.p)*.5+.15}this.leaves=this.leaves.filter(l=>l.x>-20)}
   if(t>=this.SH[this.SH.length-1][1])this.end()},
@@ -4337,16 +4338,37 @@ const CUT={
   // dağ sırtı
   const gy=H-58;for(let x=0;x<W;x+=4){const h=Math.round(10+Math.sin(x*.021)*6+Math.sin(x*.07)*3);R(x,gy-h+14,4,H,'#0c0812')}
   R(150,gy-6,340,H,'#0c0812');for(let x=150;x<490;x+=4)R(x,gy-6,4,1,'#2a1c3a');
-  // ejderha (SpriteCook piksel çizimi, dalgalanarak süzülür)
-  const ap=this.ease(T/100),gone=this.ease((T-345)/75),sc=.9,Tm=Math.min(T,335),dx=Math.round(250-Tm*.7),dy=Math.round(26+Math.sin(T*.03)*8),bound=T>=330;
+  // ejderha: gövde boyunca ilerleyen dalga, boyun/baş ayrı hareket, kükreme, çırpınma, kuyruktan çözülme
+  const D=DRAGON_IMG,ok=D.complete&&D.naturalWidth;
+  const ap=this.ease(T/90),sc=.9,Tm=Math.min(T,335),bound=T>=330,diss=(T-342)/70;
+  const enter=1-this.ease(T/120),dx=Math.round(250-Tm*.7+enter*260),dy=Math.round(26+Math.sin(T*.03)*8-enter*70);
   this.dpos=[dx,dy,sc];
-  if(ap>0.01&&gone<1&&DRAGON_IMG.complete&&DRAGON_IMG.naturalWidth){const iw=DRAGON_IMG.naturalWidth,ih=DRAGON_IMG.naturalHeight,amp=bound?1.2:4,sp=bound?.5:1;
-   g.save();g.globalAlpha=ap*(1-gone);
-   for(let sx=0;sx<iw;sx+=3){const off=Math.round(Math.sin(sx*.035-T*.09*sp)*amp*(sx/iw*.8+.2));g.drawImage(DRAGON_IMG,sx,0,3,ih,dx+sx*sc,dy+off,3*sc+.6,ih*sc)}
-   if(bound){g.globalCompositeOperation='source-atop'}
-   g.restore();
-   const ex=dx+44*sc,ey=dy+60*sc;lGlow(ex,ey,16,'255,40,30',(.5+.3*Math.sin(T*.2))*ap*(1-gone));
-   if(bound&&gone<1){g.save();g.globalAlpha=(1-gone)*.35;g.fillStyle='#ffe0a0';for(let i=0;i<14;i++){const px2=dx+hash(i)*iw*sc,py2=dy+hash(i+40)*ih*sc;g.fillRect(Math.round(px2),Math.round(py2-(T-330)*.3),2,2)}g.restore()}}
+  if(ap>0.01&&diss<1.35&&ok){const iw=D.naturalWidth,ih=D.naturalHeight,NK=72,hc=ih*sc/2;
+   const strug=bound&&T<380,om=strug?.16:.075,ampK=strug?.75:1,roar=this.ease((T-135)/18)*(1-this.ease((T-205)/25));
+   const wv=x=>{const a=(x<NK?1.2:2+9*((x-NK)/(iw-NK)))*ampK;return a*Math.sin(x*.028-T*om)+(strug?Math.sin(x*.05+T*.45)*2.2:0)};
+   const drawBody=(ox,oy,al)=>{const pts=[];
+    for(let x=NK-4;x<iw;x+=2){const y0=wv(x),sl=(wv(x+2)-y0)/2,fa=diss>0?Math.max(0,Math.min(1,1-(diss-(1-x/iw))*3)):1;if(fa<=0)continue;
+     g.save();g.globalAlpha=al*fa;g.translate(ox+x*sc,oy+y0+hc);g.rotate(Math.atan(sl)*.9);g.drawImage(D,x,0,2,ih,0,-hc,2*sc+.6,ih*sc);g.restore();
+     if(x%40===0)pts.push([ox+x*sc,oy+y0+hc*1.05,fa])}
+    // baş: boyun pivotu etrafında sallanır, kükrerken yukarı kalkar
+    const fa=diss>0?Math.max(0,Math.min(1,1-(diss-1)*3)):1,hy=wv(NK),ang=.05*Math.sin(T*.05)-.32*roar+(strug?Math.sin(T*.7)*.08:0),px=NK*sc,py=80*sc;
+    if(fa>0){g.save();g.globalAlpha=al*fa;g.translate(ox+px,oy+hy+py);g.rotate(ang);g.drawImage(D,0,0,NK+2,ih,-px,-py,(NK+2)*sc,ih*sc);g.restore()}
+    const rot=(qx,qy)=>{const vx=qx*sc-px,vy=qy*sc-py,c=Math.cos(ang),s2=Math.sin(ang);return[ox+px+vx*c-vy*s2,oy+hy+py+vx*s2+vy*c]};
+    return{pts,eye:rot(44,60),mouth:rot(8,82),fa}};
+   g.save();
+   if(enter>.05){for(let k=3;k>=1;k--)drawBody(dx+k*22*enter,dy-k*8*enter,ap*.18*enter)}
+   const R0=drawBody(dx,dy,ap);g.restore();this.dragPts=R0.pts;this.mouth=R0.mouth;
+   // gözler
+   const eg=(.55+.35*Math.sin(T*.2)+roar*.6)*ap*R0.fa;lGlow(R0.eye[0],R0.eye[1],16+roar*14,'255,40,30',eg);R(Math.round(R0.eye[0])-1,Math.round(R0.eye[1])-1,3,2,'#ffb070');
+   // kükreme: ağızdan kızıl duman/ışık patlaması
+   if(roar>.05){lGlow(R0.mouth[0],R0.mouth[1],30*roar,'255,60,40',.5*roar);if(T%2===0)this.smoke.push({x:R0.mouth[0],y:R0.mouth[1],vx:-2.2-Math.random()*1.5,vy:(Math.random()-.5)*1.2,l:40,ml:40,r:3+Math.random()*3,c:'90,20,40'})}
+   if(T>=150&&T<158)R(0,0,W,H,'rgba(180,40,60,'+(.18*(1-(T-150)/8))+')');
+   // çözülme kıvılcımları
+   if(diss>0&&diss<1.3)for(let i=0;i<3;i++){const q=Math.max(0,Math.min(1,1-diss+Math.random()*.15)),sx2=dx+q*iw*sc;this.smoke.push({x:sx2,y:dy+hc+wv(q*iw)+(Math.random()-.5)*ih*sc*.6,vx:Math.random()*.6,vy:-.6-Math.random(),l:50,ml:50,r:1.5,c:'255,210,140',sp:1})}}
+  // duman parçacıkları (gövdeden süzülen)
+  if(this.dragPts&&T<360&&T%3===0){const q=this.dragPts[Math.floor(Math.random()*this.dragPts.length)];if(q&&q[2]>.3)this.smoke.push({x:q[0],y:q[1],vx:.4+Math.random()*.6,vy:-.2-Math.random()*.4,l:70,ml:70,r:4+Math.random()*4,c:'40,16,56'})}
+  for(const q of this.smoke){q.x+=q.vx;q.y+=q.vy;q.l--;const a2=q.l/q.ml;if(q.sp){R(Math.round(q.x),Math.round(q.y),2,2,'rgba('+q.c+','+a2+')')}else{g.save();g.globalAlpha=a2*.45;this.pc(q.x,q.y,Math.round(q.r*(1.6-a2*.6)),'rgb('+q.c+')');g.restore()}}
+  this.smoke=this.smoke.filter(q=>q.l>0);
   // ustalar
   for(let i=0;i<5;i++){const x=200+i*60,f=x<W/2?1:-1;this.fighter({x,y:gy-6,face:f,pose:T>170?'atk':'idle',kind:'palm',aph:1,ak:1,pal:this.mp(i),kit:'kai',si:i,hand:HANDS[i],t:G.t+i*9})}
   // mühürler
@@ -4391,7 +4413,7 @@ const CUT={
   g.restore();g.restore();
   if(lt>420){const a=this.ease((lt-420)/60);g.save();g.globalAlpha=a;T('SHADOW FIST',W/2,62,'#e8d090',30,'center');T('Kara Ejderha\'nın Gölgesi',W/2,98,'#b8a070',10,'center');g.restore()}},
  draw(){const s=this.shot();if(!s){R(0,0,W,H,'#000');return}const lt=this.t-s[0],len=s[1]-s[0];
-  this[s[2]](lt);
+  const shk=G.shake||0;g.save();if(shk>.3)g.translate((Math.random()-.5)*shk,(Math.random()-.5)*shk);this[s[2]](lt);g.restore();
   // geçiş kararması
   const fa=Math.max(0,1-lt/22,1-(len-lt)/22);if(fa>0)R(0,0,W,H,'rgba(0,0,0,'+Math.min(1,fa)+')');
   // sinema bantları
