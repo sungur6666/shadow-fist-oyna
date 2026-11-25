@@ -6228,5 +6228,90 @@ const oR=render;render=function(){oR();const f=G.cpIF;if(!f)return;f.t++;if(f.t>
 })();
 
 </script>
+<script>
+/* ==========================================================
+   CP2 — Temel Duruş 8 hareket, düşman tepki pozları, iptal tablosu,
+   bitirici son darbe, dojo veri paneli
+   ========================================================== */
+(()=>{
+/* ---------- 1) TEMEL DURUŞ: 8 özenli hareket ---------- */
+const TS20=20,mk=(id,o)=>{MOVES[id]=Object.assign({yr:[-38,-14],qi:4,st:TS20},o,{id})};
+mk('l1_20',{n:'Düz Yumruk',tag:'light',kind:'punch',dmg:6,su:3,ac:2,rc:7,rng:26,kb:.4,stun:18,hs:4,sfx:'punch',inp:'Hafif'});
+mk('l2_20',{n:'Çapraz Yumruk',tag:'light',kind:'punch',dmg:7,su:3,ac:2,rc:8,rng:27,kb:.6,stun:19,hs:4,sfx:'punch',inp:'Hafif > Hafif'});
+mk('l3_20',{n:'Okul Çekici',tag:'light',kind:'hammer',dmg:12,su:5,ac:3,rc:12,rng:29,yr:[-38,-10],kb:5,wall:1,stun:24,hs:6,qi:6,mv:1.5,sfx:'heavy',inp:'Hafif ×3'});
+mk('hv_20',{n:'Okul Avucu',tag:'heavy',kind:'palm',dmg:15,su:8,ac:3,rc:14,rng:30,kb:6,wall:1,stun:28,hs:8,qi:8,mv:2,sfx:'heavy',inp:'Ağır'});
+MOVES.hv2_20=Object.assign({},MOVES.hv_20,{id:'hv2_20',inp:'Ağır > Ağır'});
+mk('up_20',{n:'Yükselen Avuç',tag:'heavy',kind:'upper',dmg:11,su:6,ac:3,rc:13,rng:27,yr:[-52,-6],lift:7.5,launch:1,stun:45,hs:7,qi:7,sfx:'heavy',inp:'Yukarı + Ağır'});
+mk('tm_k1',{n:'Ön Tekme',tag:'kick',kind:'kick',dmg:8,su:4,ac:3,rc:9,rng:33,yr:[-32,-4],kb:1.2,stun:19,hs:5,qi:5,sfx:'kick',inp:'Tekme'});
+mk('tm_k2',{n:'Yarım Ay Tekmesi',tag:'kick',kind:'side',dmg:11,su:5,ac:3,rc:11,rng:35,yr:[-34,-8],kb:3,stun:22,hs:5,qi:5,sfx:'kick',inp:'Tekme > Tekme'});
+MOVES.sw_20=Object.assign({},MOVES.l3_20,{id:'sw_20'});
+const NS=SF20.NEWS[TS20];if(NS){NS.light=['l1_20','l2_20','l3_20'];NS.heavy=['hv_20'];NS.kick=['tm_k1','tm_k2'];NS.launcher='up_20'}
+const inf=SF20D.info[TS20];if(inf){inf.light=['l1_20','l2_20','l3_20'];inf.heavy=['hv_20']}
+window.TEMEL8=['l1_20','l2_20','l3_20','hv_20','up_20','tm_k1','tm_k2','sp_20'];
+
+/* ---------- 2) İPTAL TABLOSU (tek yerden okunur) ---------- */
+// aşamalar: su = hazırlık, ac = vuruş, rc = toparlanma, hit = isabet sonrası
+const A=['atk','dodge','block','jump'];
+const CANCEL={
+ light:{su:[],ac:[],rc:['atk','dodge','block','jump'],hit:['atk','dodge','jump']},
+ kick:{su:[],ac:[],rc:['atk','dodge','block','jump'],hit:['atk','dodge','jump']},
+ heavy:{su:[],ac:[],rc:['dodge','block'],hit:['atk','dodge','jump']},
+ counter:{su:[],ac:[],rc:['atk','dodge','block'],hit:['atk','dodge']},
+ spec:{su:[],ac:[],rc:['dodge','block'],hit:['dodge']},
+ fin:{su:[],ac:[],rc:['dodge'],hit:[]},
+ switch:{su:[],ac:[],rc:['atk','dodge','block'],hit:['atk','dodge','jump']}};
+function phase(p,m){const a0=p.su,a1=a0+m.ac;return p.stT<a0?'su':p.stT<a1?'ac':'rc'}
+function allowed(p,m,act){const row=CANCEL[m.tag]||CANCEL.light;const ph=phase(p,m);
+ if(act==='dodge'&&has('g_dcancel'))return true;
+ if(act==='dodge'&&p.style===21&&(m.tag==='light'||m.tag==='kick')&&ph!=='su')return true; // Gölge: çevik
+ if(m.slam&&act!=='dodge')return false;
+ return (p.hitOK&&row.hit.includes(act))||row[ph].includes(act)}
+window.CANCEL=CANCEL;window.cancelAllowed=allowed;
+const oCT=Combat.tick.bind(Combat);
+Combat.tick=function(p,ax){const m=MOVES[p.mv];if(!m||p.st!=='atk')return oCT(p,ax);
+ const b=p.buf;
+ if(b&&b.k==='dodge'){if(allowed(p,m,'dodge')){if(p.dodgeCd<=0){p.buf=null;doDodge(ax);return}}else{p.buf=null;const r=oCT(p,ax);if(!p.buf&&p.st==='atk')p.buf=b;return r}}
+ if(p.blockQ>0&&p.on){if(allowed(p,m,'block')){p.blockQ=0;p.st='free';p.mv=null;p.chainT=14;return}const q=p.blockQ;p.blockQ=0;const r=oCT(p,ax);if(p.st==='atk')p.blockQ=q;return r}
+ return oCT(p,ax)};
+
+/* ---------- 3) DÜŞMAN TEPKİ POZLARI ---------- */
+// hafif: baş geriye kısa sapma · ağır: yaslanma (CP) · havada: savrulma dönüşü · yere düşüş: kısa sekme
+const oDE=drawEnemy;
+drawEnemy=function(e){if(!e||e.st==='dead'||e.boss)return oDE(e);
+ let sk=0,rot=0;
+ if(e.hitT>0&&(e.hitK||0)<1.1){sk=(e.hitDir||1)*.14*Math.min(1,e.hitT/12)}
+ if(e.air&&!(e.d&&e.d.fly)&&(e.jug||0)>0){rot=(e.hitDir||1)*clamp(-(e.vy||0)*.045,-.35,.55)}
+ if(!sk&&!rot)return oDE(e);
+ g.save();g.translate(e.x,e.y);if(rot){g.translate(0,-18);g.rotate(rot);g.translate(0,18)}if(sk)g.transform(1,0,-sk,1,0,0);g.translate(-e.x,-e.y);
+ try{return oDE(e)}finally{g.restore()}};
+// yere çarpma: sekme tozu
+const oUPx=updatePlay;updatePlay=function(){const pre=E.map(e=>e.air);oUPx();
+ E.forEach((e,i)=>{if(pre[i]&&!e.air&&e.st!=='dead'&&!e.boss&&!(e.d&&e.d.fly)){for(let k=0;k<5;k++)FX.push({x:e.x+rnd(-8,8),y:e.y-rnd(0,2),vx:rnd(-1.4,1.4),vy:-rnd(.3,1),l:rnd(14,22),c:'rgba(170,160,150,.65)',nog:1,dust:1});if(typeof CP!=='undefined')CP.kick(0,1.2)}})};
+
+/* ---------- 4) BİTİRİCİ: stil renkli son darbe ---------- */
+const oFH=HitFX.hit.bind(HitFX);
+HitFX.hit=function(e,m,dmg,dir,hx,hy,sc){oFH(e,m,dmg,dir,hx,hy,sc);
+ if(typeof FIN!=='undefined'&&FIN.on&&FIN.steps[FIN.si]&&FIN.steps[FIN.si].k==='launch'&&FIN.t===0&&window.SPFX){
+  const c=STY[P.style]?STY[P.style].c:'#fff';SPFX.play(P.style===21?'scrit':'crit',hx,hy+24,{flip:(dir||1)<0,s:1.05,tint:P.style===21||P.style===20?null:c});SPFX.play('burstg',e.x,e.y,{s:.6,tint:c})}};
+
+/* ---------- 5) DOJO VERİ PANELİ ---------- */
+const DV={on:false,last:null};window.DOJOVERI=DV;
+const oH=Combat.hit.bind(Combat);
+Combat.hit=function(e,m,opt={}){const counter=!!(e&&(e.st==='act'||e.st==='tele'));const r=oH(e,m,opt);
+ if(r!==false&&m&&P)DV.last={n:m.n||m.id,id:m.id,su:P.su,ac:m.ac,rc:m.rc,dmg:Math.round(m.dmg||0),hs:G.hs,kx:Math.abs(G.kx||0).toFixed(1),counter,combo:Combo.hits,t:G.t};return r};
+addEventListener('keydown',ev=>{if(ev.code==='F3'&&G.mode==='train'){DV.on=!DV.on;ev.preventDefault()}});
+const oHud=hud;hud=function(){oHud();if(G.mode!=='train'||G.scene!=='play')return;
+ const bx=W-52,by=H-22;Ptr.reg(bx,by,46,14,()=>{DV.on=!DV.on;Snd.sfx('ui')});R(bx,by,46,14,DV.on?'#5a2a20':'rgba(20,12,16,.7)');T('VERİ F3',bx+23,by+4,'#e8d090',6,'center');
+ if(!DV.on)return;const p=P,m=MOVES[p.mv],x=8,y=124,w=176;R(x,y,w,118,'rgba(6,4,10,.82)');R(x,y,w,1,'#e8d090');let yy=y+5;const L=(t,c)=>{T(t,x+6,yy,c||'#ddd',6);yy+=9};
+ L('DOJO VERİ PANELİ','#e8d090');L('Stil: '+STY[p.style].n);
+ if(m){const ph=phase(p,m),tot=p.su+m.ac+m.rc;L('Hareket: '+(m.n||p.mv),'#fff');L('Kare: hazırlık '+p.su+' · vuruş '+m.ac+' · toparlanma '+m.rc+' = '+tot);L('Şu an: '+({su:'HAZIRLIK',ac:'VURUŞ',rc:'TOPARLANMA'}[ph])+' ('+p.stT+')'+(p.hitOK?' · İSABET':''),'#9cf');
+  L('İptal: '+A.filter(a=>allowed(p,m,a)).map(a=>({atk:'saldırı',dodge:'kaçış',block:'blok',jump:'zıplama'}[a])).join(', ')||'—','#9d9')}
+ else{L('Hareket: —');yy+=18}
+ L('Tampon: '+(p.buf?p.buf.k+' ('+(p.buf.age||0)+' kare)':'boş'),p.buf?'#fd8':'#888');
+ const d=DV.last;if(d){L('Son isabet: '+d.n+' · '+d.dmg+' hasar','#fc8');L('Donma '+d.hs+' kare · kamera '+d.kx+(d.counter?' · KARŞI VURUŞ':''),'#fc8');L('Kombo: '+d.combo+' vuruş')}
+ if(p.style===20)L('Temel 8: '+TEMEL8.map(id=>(MOVES[id].n||id).split(' ')[0]).join(' · '),'#bba')};
+})();
+
+</script>
 </body></html>
 
