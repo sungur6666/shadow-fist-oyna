@@ -6313,5 +6313,48 @@ const oHud=hud;hud=function(){oHud();if(G.mode!=='train'||G.scene!=='play')retur
 })();
 
 </script>
+<script>
+/* ==========================================================
+   ANIM — Animasyon cilası (Kai ve düşmanlar)
+   Dönüşte daralıp açılma, zıplamada uzama, inişte basılma,
+   koşuda öne eğilme, hasar alınca geriye savrulma ve titreme,
+   isabet anında öne uzama, kaçış başında yatay uzama,
+   ağır saldırı hazırlığında çökme; düşmanlarda saldırı hazırlığında çömelme.
+   Hepsi ayakların altındaki noktadan ölçeklenir, siluet bozulmaz.
+   ========================================================== */
+(()=>{
+const AN={on:true};window.ANIM=AN;
+let lf=null,lon=true,lvy=0;
+const oUP=updatePlay;updatePlay=function(){oUP();const p=P;if(!p)return;
+ if(p.anTurn>0)p.anTurn--;if(p.anLand>0)p.anLand--;if(p.anImp>0&&!(G.hs>0))p.anImp--;
+ if(lf!=null&&p.face!==lf&&p.on&&(p.st==='free'||p.st==='block'))p.anTurn=5;lf=p.face;
+ if(p.on&&!lon&&lvy>3){p.anLand=7;p.anLandK=clamp((lvy-3)/7,.35,1)}lon=p.on;lvy=p.vy||0};
+const oHit=Combat.hit.bind(Combat);
+Combat.hit=function(e,m,opt={}){const r=oHit(e,m,opt);if(r!==false&&P&&m&&!opt.proj){P.anImp=(m.tag==='heavy'||m.tag==='fin'||m.tag==='counter')?6:4;P.anImpK=(m.tag==='light'||m.tag==='kick')?.6:1}return r};
+function kaiXf(p,o){let sx=1,sy=1,rot=0,ox=0;
+ if(p.anTurn>0){const k=p.anTurn/5;sx*=1-1.35*k}
+ if(p.st==='dead')return null;
+ if(!p.on&&p.st!=='atk'&&p.st!=='ledge'&&p.st!=='climb'&&p.st!=='ladder'&&p.st!=='wall'){const vy=p.vy||0;if(vy<-3){sy*=1.06;sx*=.95}else if(vy>4){sy*=1.035;sx*=.97}}
+ if(p.anLand>0){const k=p.anLand/7*(p.anLandK||.5);sy*=1-.13*k;sx*=1+.11*k}
+ if(p.running&&p.on&&p.st==='free'&&(p.rs||0)>3)rot+=.045;
+ if(p.st==='hurt'){rot-=.12*Math.min(1,(p.stT||0)/10);if(G.hs>0)ox+=(G.t%2?1:-1)}
+ if(p.st==='dodge'&&p.dk!=='roll'){const d0=p.dur||12,k=clamp(((p.stT||0)-d0+5)/5,0,1);sx*=1+.12*k;sy*=1-.09*k}
+ if(p.st==='atk'){const m=MOVES[p.mv];if(m&&(m.tag==='heavy'||m.tag==='fin')&&p.stT<p.su){const k=p.stT/Math.max(1,p.su);sy*=1-.045*k;sx*=1+.035*k}}
+ if(p.anImp>0){const k=p.anImp/6*(p.anImpK||1);sx*=1+.07*k;sy*=1-.04*k}
+ if(sx===1&&sy===1&&rot===0&&ox===0)return null;return{sx,sy,rot,ox}}
+const oDF=drawFighter;
+drawFighter=function(o){const p=P;if(!AN.on||!o||!p||!p.sm||o.sm!==p.sm)return oDF(o);
+ const X=kaiXf(p,o);if(!X)return oDF(o);
+ g.save();g.translate(o.x+X.ox,o.y);if(X.rot)g.rotate(X.rot*o.face);g.scale(X.sx,X.sy);g.translate(-o.x,-o.y);try{return oDF(o)}finally{g.restore()}};
+// düşmanlar: saldırı hazırlığında çömelip yaylanma, saldırı anında öne uzama
+const oDE=drawEnemy;drawEnemy=function(e){if(!AN.on||!e||e.st==='dead'||e.boss)return oDE(e);
+ let sx=1,sy=1;
+ if(e.st==='tele'&&e.d&&e.d.tele){const k=1-clamp(e.tele/e.d.tele,0,1);sy=1-.06*k;sx=1+.04*k}
+ else if(e.st==='act'&&e.d&&e.d.act&&e.stT>e.d.act-4){sx=1.06;sy=.96}
+ if(sx===1&&sy===1)return oDE(e);
+ g.save();g.translate(e.x,e.y);g.scale(sx,sy);g.translate(-e.x,-e.y);try{return oDE(e)}finally{g.restore()}};
+})();
+
+</script>
 </body></html>
 
