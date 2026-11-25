@@ -6092,17 +6092,17 @@ const oHit=HitFX.hit.bind(HitFX);
 HitFX.hit=function(e,m,dmg,dir,hx,hy,sc){oHit(e,m,dmg,dir,hx,hy,sc);
  const heavy=(m.hs||3)>=7||m.tag==='heavy'||m.tag==='counter'||!!m.charged||!!m.slam,fin=m.tag==='fin'||!!m.charged||(m.hs||0)>=9||!!m.execute,
   d=dir||1,fl=d<0,fy=hy+24,sz=Math.min(1.35,(e.d.s||1)),sh=P&&P.style===21;
- if(m.id==='ki_hit'){SPFX.play('kiboom',hx,hy,{s:.55*sz});return}
- if(m.drain&&P){SPFX.play('sdrain',P.x,P.y+8,{s:.9});SPFX.play('scrit',hx,fy,{flip:fl,s:.8*sz});return}
- if(sh){if(fin)SPFX.play('scrit',hx,fy,{flip:fl,s:sz});else if(heavy)SPFX.play('scrit',hx,fy,{flip:fl,s:.7*sz});
-  SPFX.play('sclaw',hx-d*32*.9,hy+19*.9,{flip:fl,s:.9,gap:m.multi?4:0,minor:m.multi?1:0});return}
- if(fin)SPFX.play('crit',hx,fy,{flip:fl,s:sz});
- else if(heavy)SPFX.play('blunt',hx,fy,{flip:fl,s:.75*sz});
- else if(m.multi)SPFX.play('hit',hx,fy,{flip:fl,s:.7,gap:4,minor:1});
- else SPFX.play('hit',hx,fy,{flip:fl,s:.85})};
+ if(m.id==='ki_hit'){SPFX.play('kiboom',hx,hy,{s:.38*sz});return}
+ if(m.drain&&P){SPFX.play('sdrain',P.x,P.y+8,{s:.65});SPFX.play('scrit',hx,fy,{flip:fl,s:.5*sz});return}
+ if(sh){if(fin)SPFX.play('scrit',hx,fy,{flip:fl,s:.65*sz});else if(heavy)SPFX.play('scrit',hx,fy,{flip:fl,s:.45*sz});
+  SPFX.play('sclaw',hx-d*32*.6,hy+19*.6,{flip:fl,s:.6,gap:m.multi?4:0,minor:m.multi?1:0});return}
+ if(fin)SPFX.play('crit',hx,fy,{flip:fl,s:.65*sz});
+ else if(heavy)SPFX.play('blunt',hx,fy,{flip:fl,s:.5*sz});
+ else if(m.multi)SPFX.play('hit',hx,fy,{flip:fl,s:.45,gap:4,minor:1});
+ else SPFX.play('hit',hx,fy,{flip:fl,s:.55})};
 // Kai hasar aldığında
 const oHurt=HitFX.hurt.bind(HitFX);
-HitFX.hurt=function(p,dmg,fx){oHurt(p,dmg,fx);const d=Math.sign(p.x-fx)||-p.face;SPFX.play(dmg>=14?'hurth':'hurt',p.x-d*4,p.y,{flip:d<0,s:dmg>=14?.8:.85,gap:3})};
+HitFX.hurt=function(p,dmg,fx){oHurt(p,dmg,fx);const d=Math.sign(p.x-fx)||-p.face;SPFX.play(dmg>=14?'hurth':'hurt',p.x-d*10,p.y,{flip:d<0,s:dmg>=14?.5:.55,gap:3,alpha:.9})};
 // Ki tekniği: atış parlaması + uçan Ki küresi
 const oFire=Combat.fireKi.bind(Combat);
 Combat.fireKi=function(p){const n=PR.length;const r=oFire(p);const q=PR[PR.length-1];
@@ -6113,13 +6113,13 @@ Combat.start=function(id){const r=oStart(id);const p=P,m=MOVES[id];
  if(r&&p&&m&&m.tag==='spec'&&!m.proj&&!m.drain)SPFX.play(p.style===21?'sdrain':'kicast',p.x+p.face*12,p.y+10,{s:.6,gap:10});return r};
 // blok
 const oGuard=HitFX.guard.bind(HitFX);
-HitFX.guard=function(x,y,dir,c){oGuard(x,y,dir,c);SPFX.play('block',x,y+26,{flip:dir>0,s:.8,gap:3})};
+HitFX.guard=function(x,y,dir,c){oGuard(x,y,dir,c);SPFX.play('block',x,y+26,{flip:dir>0,s:.55,gap:3})};
 // mini boss / boss yenilgisi
 const oKill=HitFX.kill.bind(HitFX);
-HitFX.kill=function(e){oKill(e);if(e&&e.d&&(e.d.mb||e.boss))SPFX.play('crit',e.x,e.y,{s:1.4})};
+HitFX.kill=function(e){oKill(e);if(e&&e.d&&(e.d.mb||e.boss))SPFX.play('crit',e.x,e.y,{s:.95})};
 // kusursuz savuşturma
 const oPar=Parry.success.bind(Parry);
-Parry.success=function(p,src,fx,opt){const r=oPar(p,src,fx,opt);const dir=Math.sign(fx-p.x)||p.face;SPFX.play('parry',p.x+dir*12,p.y,{flip:dir<0,s:.85});return r};
+Parry.success=function(p,src,fx,opt){const r=oPar(p,src,fx,opt);const dir=Math.sign(fx-p.x)||p.face;SPFX.play('parry',p.x+dir*14,p.y,{flip:dir<0,s:.6});return r};
 // stil öğrenme (usta sınavı)
 if(typeof SF20!=='undefined'&&SF20.TR){const oDone=SF20.TR.done.bind(SF20.TR);SF20.TR.done=function(){const r=oDone();if(P)SPFX.play('burstg',P.x,P.y,{s:1});return r}}
 // kare başı izleme: sert iniş, yere çakma, Ki taşında dinlenme, toplanan eşyalar
