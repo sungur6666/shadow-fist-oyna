@@ -4529,7 +4529,7 @@ const UP=s=>String(s).toLocaleUpperCase('tr');
 /* ---------- karar metinleri ---------- */
 function bonusText(slot){return slot==='boss'?'Ki barın kalıcı olarak 20 büyür.':slot===0?'Kan Ki\'si: tüm vuruşların %8 daha sert.':slot===1?'Ruh Hasadı: her düşürdüğün düşman sana Ki ve biraz can verir.':''}
 function open(req){const k=K();const c={kind:req.kind,slot:req.slot,id:req.id,name:req.name,sel:0,confirm:false,t:0,fin:req.fin};G.kc=c;G.kcRet=G.scene==='dialog'?'play':G.scene;G.scene='kichoice';Snd.sfx('tele');shake(4)}
-function queueMb(id){const k=K();if(k.mb_choice[id]!=null)return;const slot=k.mb_order.length;
+function queueMb(id){const k=K();if(k.mb_choice[id]!=null||Q.some(q=>q.id===id))return;const slot=k.mb_order.length+Q.filter(q=>q.kind==='mb').length;
  if(slot>=3){k.mb_order.push(id);if(shadow()){k.mb_choice[id]=1;k.absorbed_ki_count++;Q.push({auto:1,id})}else k.mb_choice[id]=0;save();return}
  Q.push({kind:'mb',slot,id,name:(ET[id]&&ET[id].n)||'USTA DÖVÜŞÇÜ'})}
 function afterBoss(){const k=K();if(k.first_boss_decided){epilogue();return}open({kind:'boss',slot:'boss',id:'iron',name:'DEMİR YUMRUK',fin:1})}
@@ -4538,7 +4538,7 @@ function resolve(absorb){const c=G.kc,k=K();G.kc=null;G.scene='play';
  if(c.kind==='boss'){k.first_boss_decided=true;k.first_boss_ki_absorbed=absorb;if(absorb){k.absorbed_ki_count++;absorbFx();P.qi=maxQi()}else{k.released_ki_count++;releaseFx()}
   save();const L=absorb?[['NARRATÖR','Demir Yumruk\'un Ki\'si bir nehir gibi Kai\'nin göğsüne akar. Damarlarında soğuk bir ateş yanar.'],['KAI','(Bu güç... benim değil. Ama artık bende.)'],['KI','Ki barın kalıcı olarak büyüdü. Ustalar bu değişimi hissedecek.']]
    :[['NARRATÖR','Kai avucunu açar. Demir Yumruk\'un Ki\'si gökyüzüne, arenanın kırık tavanından süzülüp gider.'],['KAI','Git. Bu güç kimsenin olmamalı.']];
-  say(L,()=>epilogue());return}
+  if(c.retro){k.ending=ending();save();say(L);return}say(L,()=>epilogue());return}
  const id=c.id,slot=c.slot;k.mb_order.push(id);k.mb_choice[id]=absorb?1:0;
  if(slot<2){if(absorb){k['miniboss_'+(slot+1)+'_ki_absorbed']=true;k.absorbed_ki_count++;absorbFx()}else{k.released_ki_count++;releaseFx()}save();
   const L=absorb?[['NARRATÖR',slot===0?'Yenilen dövüşçünün Ki\'si Kai\'nin bileklerine dolanır. Bir an gözleri mor parlar.':'Ki bu kez daha hızlı akar. Kai\'nin gölgesi bir an kendisinden önce hareket eder.'],['YENİ GÜÇ',bonusText(slot)]]
@@ -4569,7 +4569,7 @@ function drawChoice(){const c=G.kc;if(!c)return;const t=c.t,big=c.slot===2,a=Mat
  const cx=W/2,cy=H*.3;for(let i=0;i<(big?28:16);i++){const ang=t*.03*(i%2?1:-1)+i*.9,r=18+i*(big?5:4)+Math.sin(t*.05+i)*3;g.fillStyle=i%3?'rgba(160,80,255,'+(.12*a)+')':'rgba(255,240,200,'+(.08*a)+')';g.fillRect(cx+Math.cos(ang)*r-1,cy+Math.sin(ang)*r*.45-1,2+(i%3),2)}
  if(big){const k=.5+.5*Math.sin(t*.12);R(0,0,W,2,'rgba(200,40,60,'+k+')');R(0,H-2,W,2,'rgba(200,40,60,'+k+')');R(0,0,2,H,'rgba(160,80,255,'+k+')');R(W-2,0,2,H,'rgba(160,80,255,'+k+')')}
  T(big?'GERİ DÖNÜŞÜ OLMAYAN KARAR':'KI KARARI',W/2,H*.08,big?'#ff6070':'#d8b8ff',big?11:10,'center');
- T(c.name+' yenildi. Ki\'si avucunun önünde titriyor.',W/2,H*.08+16,'#ddd',7,'center');
+ T(c.retro?c.name+' çoktan yenildi, ama Ki\'si hâlâ sende yankılanıyor.':c.name+' yenildi. Ki\'si avucunun önünde titriyor.',W/2,H*.08+16,'#ddd',7,'center');
  if(t<20)return;
  const bw=Math.min(210,(W-48)/2|0),bh=Math.min(120,H*.42|0),by=H*.4,gap=12,x0=W/2-bw-gap/2,x1=W/2+gap/2;
  const k=K(),cnt=k.absorbed_ki_count;
@@ -4671,7 +4671,9 @@ const oFin=Arena.finish.bind(Arena);Arena.finish=function(a){const r=oFin(a);if(
 // kayıt
 const oSave=save;save=function(){oSave();if(G.mode==='train')return;try{const s=JSON.parse(localStorage.getItem('shadowfist2')||'{}');s.kp=G.kp||KP.fresh();localStorage.setItem('shadowfist2',JSON.stringify(s))}catch(e){}};
 const oSG=startGame;startGame=function(load){const s=load?loadSave():null;oSG(load);G.kp=Object.assign(KP.fresh(),(s&&s.kp)||{});KP.Q.length=0;
- if(G.kp.shadow_path_chosen){G.styles[GS]=true;KP.addOrder()}else if(G.styles)delete G.styles[GS]};
+ if(G.kp.shadow_path_chosen){G.styles[GS]=true;KP.addOrder()}else if(G.styles)delete G.styles[GS];
+const k=G.kp;if(load&&G.mode==='story'&&G.bossDead&&!k.first_boss_decided)KP.Q.push({kind:'boss',slot:'boss',id:'iron',name:'DEMİR YUMRUK',retro:1});if(load&&G.mode==='story'&&!k.miniboss_3_decided){const pend=[];for(const rid in ROOMS){(ROOMS[rid].arenas||[]).forEach((ar,i)=>{if(ar.mb&&G.done[rid+':A:'+i]&&k.mb_choice[ar.mb]==null&&!pend.includes(ar.mb))pend.push(ar.mb)})}
+ for(const id of pend){if(k.mb_order.length+KP.Q.filter(q=>q.kind==='mb').length>=3)break;KP.Q.push({kind:'mb',slot:k.mb_order.length+KP.Q.filter(q=>q.kind==='mb').length,id,name:(ET[id]&&ET[id].n)||'USTA DÖVÜŞÇÜ',retro:1})}}};
 const oTr=startTrain;startTrain=function(){oTr();G.kp=KP.fresh();KP.addOrder()};
 // sahne güncellemesi
 const oUM=updateMenus;updateMenus=function(){if(G.scene==='kichoice'){KP.upd();return}if(G.scene==='kiunlock'){KP.updUnlock();return}oUM()};
@@ -4680,7 +4682,7 @@ const oR=render;render=function(){oR();if(!P)return;if(G.scene==='kichoice')KP.d
  if(G.kpFlash>0){G.kpFlash--;g.fillStyle='rgba(150,70,255,'+(G.kpFlash/24*.35)+')';g.fillRect(0,0,W,H)}};
 // karar kuyruğu: diyalog bittiğinde aç
 const oUP=updatePlay;updatePlay=function(){
- if(KP.Q.length&&G.scene==='play'&&!G.trans&&P&&P.st!=='dead'){const q=KP.Q.shift();if(q.auto){const p=P;ring(p.x,p.y-24,30,PURP,18);p.qi=Math.min(maxQi(),p.qi+40);popup('Ki özümsendi',p.x,p.y-64,PURP);Snd.sfx('veil')}else{G.kc=null;(function(r){G.kc={kind:r.kind,slot:r.slot,id:r.id,name:r.name,sel:0,confirm:false,t:0};G.scene='kichoice';Snd.sfx('tele');shake(4)})(q);return}}
+ if(KP.Q.length&&G.scene==='play'&&!G.trans&&P&&P.st!=='dead'){const q=KP.Q.shift();if(q.auto){const p=P;ring(p.x,p.y-24,30,PURP,18);p.qi=Math.min(maxQi(),p.qi+40);popup('Ki özümsendi',p.x,p.y-64,PURP);Snd.sfx('veil')}else{G.kc=null;(function(r){G.kc={kind:r.kind,slot:r.slot,id:r.id,name:r.name,retro:r.retro,sel:0,confirm:false,t:0};G.scene='kichoice';Snd.sfx('tele');shake(4)})(q);return}}
  oUP();const p=P;if(!p)return;
  // gölge duman izleri
  const st=KP.stage();if(st>=2&&G.t%(st>=3?5:14)===0&&p.st!=='dead'){FX.push({x:p.x+rnd(-7,7),y:p.y-rnd(4,36),vx:rnd(-.3,.3),vy:-rnd(.4,1.2),l:rnd(16,28),c:G.t%3?'#7a3ad0':'#1a0a26'})}
