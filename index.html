@@ -6410,5 +6410,104 @@ const STYID=(()=>{const R={};window.STYLE8={};
 })();
 
 </script>
+<script>
+/* ==========================================================
+   STY-ALL — 21 stilin hareket karakteri (Kaplan sty_js.js'te).
+   Her stil için: bekleme (nefes / salınım / el düzeni / ara figür),
+   yürüyüş karakteri, kendine ait koşu, en fazla 8 hareket, vuruş vurgusu.
+   A dizisi: [kalça Y, eğilme, ön ayak x,y, arka ayak x,y, ön el x,y, arka el x,y, baş x,y]
+   ========================================================== */
+(()=>{
+const sin=Math.sin,cos=Math.cos,ab=Math.abs,mx=Math.max;
+// ---- koşu kolları ----
+const ARMS={
+ pump:(s)=>[6-s*8,3-ab(s)*3,2+s*8,3+mx(0,s)*2],
+ wings:(s)=>[-5+s*2,-3+ab(s),-11-s*2,-6+ab(s)],
+ low:(s)=>[14,6+s,10,8-s],
+ guard:(s)=>[10+s,-8,7-s,-5],
+ dangle:(s)=>[9+s*4,8,4-s*4,9],
+ hooks:(s)=>[10,-10+s*2,6,-7-s*2],
+ back:(s)=>[-9,3,-13,1],
+ fists:(s)=>[9+s*2,-6,6-s*2,-4],
+ heavy:(s)=>[8-s*5,4,3+s*5,6],
+ palm:(s)=>[12+s,-1,3-s*3,3],
+ circle:(s,r)=>[9+cos(r)*4,-2+sin(r)*4,4-cos(r)*4,2-sin(r)*4],
+ sway:(s,r)=>[7-s*6,-1+sin(r*.5)*3,1+s*6,2]};
+function runPose(c,t){const r=RPH!=null?RPH*6.2832:t*.44,s1=sin(r),c1=cos(r),fl=mx(0,ab(c1)-.5),sa=c.sa||12,lf=c.lift||8;
+ const a=ARMS[c.arms||'pump'](s1,r);let lean=c.lean!=null?c.lean:6;if(c.arms==='sway')lean+=sin(r*.5)*4;
+ return[(c.hip||-16)-fl*(c.bounce||3),lean,s1*sa+(c.fo||4),-mx(0,c1)*lf-fl*2,-s1*sa,-mx(0,-c1)*lf-fl*2,a[0],a[1],a[2],a[3],c.hdx||1,c.hdy||-.5]}
+// ---- stil tablosu ----
+const T={
+ 1:{n:'Turna',idle:(A,t)=>{const w=sin(t*.05);A[7]+=w*2.5;A[9]+=w*2.5;A[6]-=w;A[1]+=sin(t*.031)*1.2;const g=t%260;if(g<30){const k=sin(g/30*Math.PI);A[7]-=4*k;A[9]-=5*k;A[8]-=3*k}},
+  walk:(A,t)=>{A[0]-=.6;A[7]+=sin(t*.2)*1.5},run:{hip:-17,lean:4,arms:'wings',sa:13,lift:7,bounce:2},kick:['kk','kk2']},
+ 2:{n:'Yılan',idle:(A,t)=>{const w=sin(t*.09);A[1]+=w*2.6;A[10]-=w*1.8;A[6]+=sin(t*.18)*2.2;A[7]+=cos(t*.18)*1.6;A[0]+=1},
+  walk:(A,t)=>{A[1]+=sin(t*.25)*2.4;A[0]+=1.2},run:{hip:-12,lean:12,arms:'low',sa:13,lift:5,bounce:1.5},kick:['kk'],fast:1},
+ 3:{n:'Ejderha',idle:(A,t)=>{const a=t*.06;A[6]+=cos(a)*3;A[7]+=sin(a)*3;A[8]+=cos(a+3.1)*2.4;A[9]+=sin(a+3.1)*2.4;A[0]+=sin(t*.06)*.8;A[1]+=sin(a)*1.2},
+  walk:(A,t)=>{const a=t*.2;A[6]+=cos(a)*2;A[7]+=sin(a)*2},run:{hip:-15,lean:7,arms:'circle',sa:12,lift:7},kick:['kk','kk2']},
+ 4:{n:'Wing Chun',idle:(A,t)=>{const g=t%190;if(g<18){const k=(g%6)/6;A[6]+=sin(k*Math.PI)*8;A[8]+=g%12<6?0:sin(k*Math.PI)*6}A[1]-=1},
+  walk:(A,t)=>{A[1]-=1;A[0]+=.5},run:{hip:-15,lean:3,arms:'guard',sa:10,lift:6,bounce:2},kick:['kk']},
+ 5:{n:'Sarhoş',idle:(A,t)=>{if(t%240<10)A[0]+=sin((t%240)/10*Math.PI)*2.2},walk:null,run:{hip:-15,lean:4,arms:'sway',sa:12,lift:9,bounce:4},kick:['kk','kk2']},
+ 6:{n:'Maymun',idle:null,walk:null,run:{hip:-10,lean:14,arms:'dangle',sa:13,lift:7,bounce:4},kick:['kk','kk2']},
+ 7:{n:'Mantis',idle:(A,t)=>{const g=t%70;if(g<6){A[7]-=3;A[9]-=2}A[11]+=sin(t*.04)*1;A[10]+=sin(t*.04)},walk:(A,t)=>{A[7]-=1;A[9]-=1},run:{hip:-15,lean:6,arms:'hooks',sa:12,lift:7},kick:['kk'],claw:'#a8d848'},
+ 8:{n:'Demir Beden',idle:(A,t)=>{const br=sin(t*.045);A[0]+=br*.6;A[1]-=1.2;A[6]+=br*.8;A[8]-=br*.8;const g=t%300;if(g<26){const k=sin(g/26*Math.PI);A[6]+=2*k;A[7]+=4*k;A[8]+=2*k;A[9]+=4*k;A[1]-=1.5*k}},
+  walk:(A,t)=>{A[0]+=1;A[1]-=1},run:{hip:-13,lean:3,arms:'heavy',sa:10,lift:5,bounce:2},kick:['kk']},
+ 9:{n:'Shaolin',idle:(A,t)=>{A[0]+=sin(t*.06)*.5;const g=t%280;if(g<34){const k=sin(g/34*Math.PI);A[6]=A[6]*(1-k)+4*k;A[7]=A[7]*(1-k)-6*k;A[8]=A[8]*(1-k)+3*k;A[9]=A[9]*(1-k)-6*k}},
+  walk:null,run:{hip:-16,lean:5,arms:'pump',sa:12,lift:8},kick:['kk']},
+ 10:{n:'Bajiquan',idle:(A,t)=>{const g=t%200;if(g<8){A[0]+=3*(1-g/8)}A[1]+=1.5;A[0]+=.5},walk:(A,t)=>{A[1]+=1.5;A[0]+=1},run:{hip:-13,lean:9,arms:'fists',sa:12,lift:5},kick:['kk']},
+ 11:{n:'Tai Chi',idle:(A,t)=>{const a=t*.025;A[6]+=cos(a)*5;A[7]+=sin(a)*4;A[8]+=cos(a+1.6)*4;A[9]+=sin(a+1.6)*3;A[0]+=sin(a)*.8;A[1]+=sin(a)*1.5},
+  walk:(A,t)=>{const a=t*.12;A[6]+=cos(a)*2.5;A[7]+=sin(a)*2},run:{hip:-15,lean:4,arms:'palm',sa:11,lift:6,bounce:2},kick:['kk']},
+ 12:{n:'Bagua',idle:(A,t)=>{const a=t*.05;A[2]+=sin(a)*1.5;A[4]+=sin(a+3.1)*1.5;A[6]+=sin(a)*2;A[1]+=sin(a*.5)*1.5;A[10]+=sin(a*.5)},walk:(A,t)=>{A[6]+=2;A[7]-=2},run:{hip:-14,lean:6,arms:'palm',sa:12,lift:6},kick:['kk']},
+ 13:{n:'Xingyi',idle:(A,t)=>{const p=sin(t*.08);A[1]+=1+p*1.5;A[6]+=p*1.5;A[0]+=ab(p)*.5},walk:(A,t)=>{A[1]+=2},run:{hip:-14,lean:9,arms:'fists',sa:12,lift:6},kick:['kk']},
+ 14:{n:'Hung Gar',idle:(A,t)=>{const br=sin(t*.05);A[0]+=br*.8+1.5;A[7]+=br*1.2;A[9]+=br;A[2]+=1;A[4]-=1},walk:(A,t)=>{A[0]+=1.5},run:{hip:-12,lean:5,arms:'heavy',sa:11,lift:5,bounce:2},kick:['kk']},
+ 15:{n:'Choy Li Fut',idle:(A,t)=>{const a=t*.07;A[8]+=cos(a)*4;A[9]+=sin(a)*5;A[1]+=sin(a)*1},walk:(A,t)=>{A[8]+=sin(t*.2)*3},run:{hip:-15,lean:7,arms:'sway',sa:13,lift:7},kick:['kk']},
+ 16:{n:'Kartal',idle:(A,t)=>{const g=t%55;if(g<4){A[10]+=1.5;A[11]-=1}A[7]-=2;A[9]-=2;if(t%160<5){A[6]+=3;A[7]-=2}},walk:(A,t)=>{A[7]-=2},run:{hip:-15,lean:8,arms:'hooks',sa:12,lift:7},kick:['kk'],claw:'#c89048'},
+ 17:{n:'Leopar',idle:(A,t)=>{const b=ab(sin(t*.2));A[0]+=b*1.4;A[3]-=b*.5;A[5]-=b*.5;A[6]+=sin(t*.13)*1.2},walk:(A,t)=>{A[0]+=ab(sin(t*.3))*1},run:{hip:-12,lean:11,arms:'low',sa:14,lift:6,bounce:3},kick:['kk'],claw:'#e0c040'},
+ 18:{n:'Shuai Jiao',idle:(A,t)=>{const a=sin(t*.06);A[1]+=a*1.6;A[6]+=a*1.5;A[8]-=a*1.5;A[2]+=1;A[4]-=1;A[0]+=1},walk:(A,t)=>{A[1]+=sin(t*.2)*1.5},run:{hip:-14,lean:6,arms:'heavy',sa:11,lift:6},kick:['kk']},
+ 19:{n:'Sanda',idle:(A,t)=>{const b=ab(sin(t*.16));A[0]+=b*1.1;A[3]-=b*.8;A[5]-=b*.8;if(t%150<7)A[6]+=sin((t%150)/7*Math.PI)*7},walk:(A,t)=>{A[0]+=ab(sin(t*.3))*.8},run:{hip:-15,lean:6,arms:'fists',sa:12,lift:7},kick:['kk']},
+ 20:{n:'Temel',idle:(A,t)=>{A[0]+=sin(t*.07)*.4},walk:null,run:{hip:-16,lean:6,arms:'pump',sa:12,lift:8}},
+ 21:{n:'Gölge',idle:(A,t)=>{A[0]+=1.5+sin(t*.04)*.7;A[11]+=1;A[10]+=1;A[7]+=2;A[9]+=3;const g=(t*7)%233;if(g<3){A[1]+=(g-1)*2.5;A[10]-=1.5}},
+  walk:(A,t)=>{A[0]+=1.5;A[1]+=2},run:{hip:-11,lean:14,arms:'back',sa:14,lift:5,bounce:1},trail:1}};
+
+// ---- temel duruşlar (STANCE): her stilin siluet kimliği; saldırı pozları da buradan başlar ----
+const ST={
+ 8:[-11,-2,13,0,-13,0,6,6,2,6,0,1],      // Demir Beden: geniş, göğüs önde, yumruklar belde
+ 9:[-15,1,9,0,-8,0,12,-7,-2,6,0,0],      // Shaolin: dikey avuç önde, yumruk belde
+ 10:[-10,4,11,0,-10,0,9,-1,1,3,1,1],     // Bajiquan: alçak, dirsek önde
+ 11:[-16,-1,8,0,-7,0,11,-2,6,1,-1,-1],   // Tai Chi: dik, iki avuç yumuşak önde
+ 12:[-13,-3,8,0,-6,0,14,-8,6,-4,-1,0],   // Bagua: dönen avuçlar yukarıda
+ 13:[-15,3,10,0,-6,0,16,-2,4,0,1,0],     // Xingyi: üç beden duruşu, ön kol uzun
+ 14:[-8,1,14,0,-14,0,11,-1,7,3,0,1],     // Hung Gar: çok alçak at duruşu
+ 15:[-14,0,9,0,-9,0,7,-9,10,5,0,0],      // Choy Li Fut: kollar açık, savurmaya hazır
+ 16:[-13,2,9,0,-6,0,11,-12,6,-8,0,0],    // Kartal: pençeler yüksekte
+ 17:[-9,5,8,0,-6,0,12,3,7,4,1,2],        // Leopar: alçak, öne eğik
+ 18:[-12,3,11,0,-9,0,13,5,10,6,1,1],     // Shuai Jiao: geniş, kollar açık önde (kavrama)
+ 19:[-15,1,7,0,-6,0,8,-10,5,-9,0,0]};    // Sanda: boks gardı, yumruklar yüzde
+for(const k in ST){STANCE[k]=ST[k];const S=SF20.NEWS[k];if(S)S.stance=ST[k].slice()}
+for(const k in T){const si=+k,c=T[k];
+ const def={pose(A,pose,t,o){if(pose==='idle'&&c.idle)c.idle(A,t,o);else if(pose==='walk'&&c.walk)c.walk(A,t,o);return A},
+  move(pose,t,o){return pose==='run'&&c.run?runPose(c.run,t):null}};
+ if(c.claw)def.hit=(p,e,m,dir)=>{if(window.SPFX&&(m.tag==='heavy'||m.tag==='light'&&p.sfHits>=1))SPFX.play('sclaw',e.x-dir*16,e.y-8,{flip:dir<0,s:m.tag==='heavy'?.6:.45,tint:c.claw,tintS:1,gap:6,minor:1})};
+ STYID.def(si,def)}
+// ---- hareket setleri: en fazla 8 ----
+const NS=SF20.NEWS;
+for(let si=8;si<=19;si++){const S=NS[si];if(!S)continue;const k=T[si]&&T[si].kick||[S.kick[0]];S.kick=k.slice(0,1);
+ const set=[...S.light,...S.heavy,S.kick[0],S.special];if(S.launcher&&!set.includes(S.launcher))set.push(S.launcher);STYLE8[si]=set.slice(0,8)}
+STYLE8[20]=window.TEMEL8||STYLE8[20];
+const S21=NS[21];if(S21)STYLE8[21]=['l1_21','l2_21','l3_21','hv_21','hv2_21','sh_hunt','sh_k1','sh_sp'];
+// eski stiller (1-7): tekme zinciri kısaltılır, set belgelenir
+const OLD={1:['l1','l2','l3_1','hv_1','rise','kk','kk2','sp_1'],2:['l1','l2','l3_2','hv_2','kk','counter2','body','sp_2'],3:['l1','l2','l3_3','hv_3','kk','kk2','nova','sp_3'],
+ 4:['l1','l2','l3_4','hv_4','kk','body','counter4','sp_4'],5:['l1','l2','l3_5','hv_5','kk','kk2','body','sp_5'],6:['l1','l2','l3_6','hv_6','kk','kk2','slide','sp_6'],7:['l1','l2','l3_7','hv_7','kk','body','counter7','sp_7']};
+for(const k in OLD)STYLE8[k]=OLD[k].filter(id=>MOVES[id]);
+for(let si=1;si<=7;si++){const kc=T[si].kick;STYID.R[si].pick=function(b,p){if(b.k!=='kick'||!p.on)return undefined;const u=b.u||held('U'),d=b.d||held('D');if(u||d||p.running)return undefined;
+  const chain=p.st==='atk'||p.chainT>0,i=kc.indexOf(p.lastMv);return chain&&i>=0&&i<kc.length-1?kc[i+1]:kc[0]}}
+// ---- hareket vurguları ----
+// Gölge: hareket ederken gölge izi; Yılan: saldırıları %10 daha hızlı açılır
+const oUP=updatePlay;updatePlay=function(){oUP();const p=P;if(!p)return;
+ if(p.style===21&&(ab(p.vx||0)>1.2||!p.on||p.st==='atk'))p.shadowTrail=G.playT+10};
+const oStart=Combat.start.bind(Combat);Combat.start=function(id){const r=oStart(id);const p=P;if(r&&p&&T[p.style]&&T[p.style].fast&&p.su>2)p.su=Math.max(2,p.su-1);return r};
+window.STYLE_ID=T;
+})();
+
+</script>
 </body></html>
 
