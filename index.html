@@ -6509,5 +6509,70 @@ window.STYLE_ID=T;
 })();
 
 </script>
+<script>
+/* ==========================================================
+   EN2 — Düşman ve boss davranışları
+   · Halka düzeni: sırasını bekleyen düşmanlar farklı mesafelerde çember çizer, ileri-geri adım atar
+   · Seri saldırı: bazı düşmanlar ilk saldırının ardından hızlı ikinci saldırı yapar
+   · Aldatma: çevik düşmanlar ara sıra saldırıya kalkıp vazgeçer (savuşturma yemi)
+   · Denge (poise): iri düşmanlar hazırlık/saldırı sırasında hafif vuruşlarla kesilmez; denge bozulunca uzun sersemler
+   · Mini boss öfkesi: canı yarıya inince kükrer, iter, hızlanır, daha sık seri saldırı yapar
+   · Boss aşama geçişi: şok dalgası, oyuncuyu iter, kamera darbesi
+   ========================================================== */
+const EN2=(()=>{
+const h=x=>{x=String(x);let a=7;for(let i=0;i<x.length;i++)a=(a*31+x.charCodeAt(i))|0;return Math.abs(a)};
+const AGILE=/fast|counter|leaper|spear|kuno|yelpaze|dao/,COMBO=/grunt|fast|counter|spear|kuno|dao|staffman|yelpaze/,HEAVY=/brute|shield|staffman/;
+function poiseMax(e){if(e.boss)return 0;if(e.d&&e.d.mb)return 40;if(HEAVY.test(e.type||''))return 26;return 0}
+return{h,AGILE,COMBO,HEAVY,poiseMax}})();
+window.EN2=EN2;
+(()=>{
+const oUE=updEnemy;
+updEnemy=function(e){const pst=e&&e.st;const r=oUE(e);
+ if(!e||e.st==='dead'||e.boss||!P||G.scene!=='play'||(typeof FIN!=='undefined'&&FIN.on))return r;
+ const d=e.d||{},p=P,dx=p.x-e.x,ad=Math.abs(dx),dir=Math.sign(dx)||1,ty=e.type||'';
+ if(e.rageInv>0)e.rageInv--;
+ if(e.poiseT>0&&--e.poiseT===0)e.poise=e.poiseM;
+ if(d.dummy||d.fly||e.air||!e.on||e.stun>0||e.down>0)return r;
+ // ---- mini boss öfkesi ----
+ if(d.mb&&!e.rage&&e.hp<=d.hp*.5){e.rage=1;e.d=Object.assign({},d,{spd:d.spd*1.15,tele:Math.max(6,Math.round(d.tele*.8)),cd:Math.round(d.cd*.72)});
+  e.rageInv=40;e.st='chase';e.stun=0;Snd.sfx('roar');shake(8);if(typeof CP!=='undefined')CP.kick(-dir*3,1);popup('ÖFKE!',e.x,e.y-74,'#ff5030');ring(e.x,e.y-26,46,'#ff4020',22);
+  if(window.SPFX)SPFX.play('burstg',e.x,e.y,{s:.9,tint:'#ff3020',tintS:1});
+  if(ad<70&&p.on){p.vx=dir*5;p.st=p.st==='atk'?'free':p.st}return r}
+ // ---- seri saldırı: saldırı bitince hızlı ikinci saldırı ----
+ if(pst==='act'&&e.st==='rec'&&!e.follow&&!d.ranged&&(COMBO_OK(e))&&ad<(d.rng||30)+14&&p.st!=='dead'){
+  const ch=e.rage?.6:d.mb?.4:.3;if(Math.random()<ch){e.follow=1;e.st='tele';e.tele=e.tl=Math.max(5,Math.round(d.tele*.55));e.hit=false;e.unb=false;Snd.sfx('tele');return r}}
+ if(e.st==='chase'||e.st==='idle')e.follow=0;
+ // ---- aldatma ----
+ if(e.st==='tele'&&pst!=='tele'&&!e.unb&&!e.follow&&EN2.AGILE.test(ty)&&Math.random()<.14)e.feint=1;
+ if(e.feint&&e.st==='tele'&&e.tele<=6){e.feint=0;e.st='chase';e.cd=Math.max(e.cd,14);e.backT=8;popup('?',e.x,e.y-58,'#ddd');return r}
+ if(e.st!=='tele')e.feint=0;
+ // ---- halka düzeni: sıra bekleyen düşmanlar çember çizer ----
+ if(e.st==='chase'&&!d.ranged&&!e.flank&&!(e.backT>0)&&!tokenFree()&&ad<120&&Math.abs(p.y-e.y)<20){
+  const R=48+(EN2.h(e.i)%3)*16+Math.sin((G.t+EN2.h(e.i))*.04)*8,sp=(d.spd||1)*.42;
+  if(ad<R-5&&AI2.walkable(e,-dir))emove(e,-dir*sp);else if(ad>R+5)emove(e,dir*sp*.8);e.face=dir}
+ return r};
+function COMBO_OK(e){return EN2.COMBO.test(e.type||'')||(e.d&&e.d.mb)}
+// ---- denge (poise) + öfke dokunulmazlığı ----
+const oHit=Combat.hit.bind(Combat);
+Combat.hit=function(e,m,opt={}){
+ if(e&&e.rageInv>0&&!opt.proj){Snd.sfx('clang');popup('ÖFKELİ',e.x,e.y-58,'#f64');return false}
+ if(!e||!m||e.boss)return oHit(e,m,opt);
+ if(e.poiseM==null){e.poiseM=EN2.poiseMax(e);e.poise=e.poiseM}
+ const busy=(e.st==='tele'||e.st==='act')&&e.poise>0&&(m.tag==='light'||m.tag==='kick'||m.tag==='switch')&&!m.charged;
+ const snap=busy?{st:e.st,tele:e.tele,stT:e.stT,hit:e.hit,face:e.face,x:e.x,vx:e.vx,unb:e.unb,tl:e.tl}:null;
+ const r=oHit(e,m,opt);if(r===false||!snap||e.st==='dead'||e.hp<=0)return r;
+ e.poise-=Math.max(4,m.dmg||6);e.poiseT=180;
+ if(e.poise>0){Object.assign(e,snap);e.stun=0;e.down=0;e.air=false;e.on=true;sparks(e.x,e.y-30,'#e8e8f0',6,2);if(G.t-(e._pz||0)>40){popup('DAYANDI',e.x,e.y-60,'#cfd8e8');e._pz=G.t}}
+ else{e.poise=0;e.st='chase';e.tele=0;e.stun=Math.max(e.stun||0,55);e.vuln=55;popup('DENGE BOZULDU',e.x,e.y-64,'#ffd860');Snd.sfx('gbreak');shake(5);
+  if(window.SPFX)SPFX.play('crit',e.x,e.y,{s:.7,tint:'#ffd860'})}
+ return r};
+// ---- öfkeli mini boss aurası ----
+const oDE=drawEnemy;drawEnemy=function(e){if(e&&e.rage&&e.st!=='dead'){const s=(e.d.s||1),k=.5+.5*Math.sin(G.t*.3),gr=g.createRadialGradient(e.x,e.y-26*s,4,e.x,e.y-26*s,40*s);gr.addColorStop(0,'rgba(255,60,20,'+(.22+.12*k)+')');gr.addColorStop(1,'rgba(255,60,20,0)');g.fillStyle=gr;g.fillRect(e.x-42*s,e.y-70*s,84*s,80*s);
+  if(G.t%5===0)FX.push({x:e.x+rnd(-8,8),y:e.y-rnd(10,44)*s,vx:rnd(-.3,.3),vy:-rnd(.6,1.4),l:rnd(14,22),c:G.t%10?'#ff6030':'#ffb040'})}return oDE(e)};
+// ---- boss aşama geçişi: şok dalgası ----
+for(const fn of['bossPhase2','bossPhase3']){if(typeof window[fn]!=='function')continue;const o=window[fn];window[fn]=function(e){const r=o(e);const p=P;if(p&&e){const dir=Math.sign(p.x-e.x)||1;ring(e.x,e.y-20,70,'#ff5020',24);ring(e.x,e.y-20,40,'#fff',14);if(window.SPFX)SPFX.play('burstg',e.x,e.y,{s:1.3,tint:'#ff4020',tintS:1});if(typeof CP!=='undefined')CP.kick(dir*4,2);if(Math.abs(p.x-e.x)<90){p.vx=dir*6;if(p.st==='atk'){p.st='free';p.mv=null}}}return r}}
+})();
+
+</script>
 </body></html>
 
