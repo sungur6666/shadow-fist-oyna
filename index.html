@@ -6827,5 +6827,39 @@ const oHurt=HitFX.hurt.bind(HitFX);HitFX.hurt=function(p,dmg,fx){oHurt(p,dmg,fx)
 })();
 
 </script>
+<script>
+/* ===== Usta yerleşimi: her yeni oyunda rastgele, bölge içinde, odada en fazla 1 usta ===== */
+(()=>{const MS=SF20D.masters;
+ const ORIG={};for(const i in MS)ORIG[i]=MS[i].room;
+ const hasFloor=rows=>{const h=rows.length,w=rows[0].length;for(let c=3;c<w-3;c++)for(let r=h-1;r>3;r--)if(rows[r][c]==='#'&&rows[r-1][c]==='.'&&rows[r-2][c]==='.'&&rows[r-3][c]==='.')return true;return false};
+ const npcRoom=k=>ROOMS[k].rows.some(r=>r.includes('N'));
+ const ok=k=>{const R=ROOMS[k];return R&&R.map&&k!=='dojo'&&k!=='boss'&&R.theme!=='boss'||k==='a_hazirlik'};
+ const elig=reg=>Object.keys(ROOMS).filter(k=>ROOMS[k].reg===reg&&ok(k)&&!npcRoom(k)&&hasFloor(ROOMS[k].rows));
+ function rng(seed){let a=seed>>>0||1;return()=>{a^=a<<13;a>>>=0;a^=a>>17;a^=a<<5;a>>>=0;return a/4294967296}}
+ // keep: {usta:oda} sabit kalacaklar (tanışılmış ustalar)
+ function make(keep,seed){const r=rng(seed),L={},used=new Set();
+  for(const i in keep)if(ROOMS[keep[i]]&&!npcRoom(keep[i])&&!used.has(keep[i])){L[i]=keep[i];used.add(keep[i])}
+  const byReg={};for(const i in MS){if(L[i])continue;const reg=ROOMS[ORIG[i]].reg;(byReg[reg]=byReg[reg]||[]).push(i)}
+  const spill=[];
+  for(const reg in byReg){const rooms=elig(reg).filter(k=>!used.has(k));
+   for(let j=rooms.length-1;j>0;j--){const q=Math.floor(r()*(j+1));[rooms[j],rooms[q]]=[rooms[q],rooms[j]]}
+   for(const i of byReg[reg]){const k=rooms.shift();if(k){L[i]=k;used.add(k)}else spill.push(i)}}
+  // bölgede yer kalmazsa: herhangi bir boş uygun oda
+  if(spill.length){const all=Object.keys(ROOMS).filter(k=>ok(k)&&!npcRoom(k)&&hasFloor(ROOMS[k].rows)&&!used.has(k));
+   for(const i of spill){const k=all.splice(Math.floor(r()*all.length),1)[0]||ORIG[i];L[i]=k;used.add(k)}}
+  return L}
+ function apply(L){for(const i in MS)MS[i].room=L[i]||ORIG[i];G.mlay=L}
+ window.MLAY={make,apply,ORIG,elig};
+
+ const oSG=startGame;startGame=function(load){
+  const s=load?loadSave():null;let L=s&&s.mlay;
+  const valid=L&&Object.keys(MS).every(i=>ROOMS[L[i]])&&new Set(Object.keys(MS).map(i=>L[i])).size===Object.keys(MS).length;
+  if(!valid){const keep={},met=(s&&s.mmet)||{};if(s)for(const i in met)if(met[i])keep[i]=(L&&L[i])||ORIG[i];
+   L=make(keep,(Math.random()*4294967296)>>>0)}
+  apply(L);const r=oSG.apply(this,arguments);if(G.mode==='story')save();return r};
+ const oSave=save;save=function(){oSave();if(G.mode==='train'||!G.mlay)return;try{const s=JSON.parse(localStorage.getItem(STORY_SLOT)||'null');if(s){s.mlay=G.mlay;localStorage.setItem(STORY_SLOT,JSON.stringify(s))}}catch(e){}};
+})();
+
+</script>
 </body></html>
 
