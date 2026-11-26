@@ -6736,5 +6736,96 @@ const oHurt=HitFX.hurt.bind(HitFX);HitFX.hurt=function(p,dmg,fx){oHurt(p,dmg,fx)
 })();
 
 </script>
+<script>
+/* ===== SES VE MÜZİK 1: uyarlanır dövüş katmanı, tehlike/menü karışımı, konumsal ses, bölge ortam sesleri, Ki taşı uğultusu ===== */
+(()=>{
+ const S2={I:0,It:0,fightT:0,calm:0,hb:0,amb:{},theme:null,eng:0};window.SND2=S2;
+ const EXPLORE=new Set(['school','bamboo','bridges','monastery','under','grave','secret','bossidle']);
+ const ENG=new Set(['chase','alert','tele','act','rec','stun','btele','bact','brec']);
+
+ function setup(){const s=Snd,ac=s.ac;if(!ac||s._s2)return;s._s2=1;
+  // müzik zinciri: scoreBus -> alçak geçiren -> menü kazancı -> mb
+  try{s.scoreBus.disconnect()}catch(e){}
+  s.mLP=ac.createBiquadFilter();s.mLP.type='lowpass';s.mLP.frequency.value=20000;s.mLP.Q.value=.5;
+  s.mG=ac.createGain();s.scoreBus.connect(s.mLP);s.mLP.connect(s.mG);s.mG.connect(s.mb);
+  // dövüş katmanı (scoreBus'a: vuruşlarda o da kısılır)
+  s.cl=ac.createGain();s.cl.gain.value=0;s.cl.connect(s.scoreBus);
+  // ortam: sürekli yatak + olay sesleri (müzik sesine bağlı)
+  s.ambD=ac.createGain();s.ambD.gain.value=.9;s.ambD.connect(s.mb);
+  const bs=ac.createBufferSource();bs.buffer=s.nb;bs.loop=true;s.bedF=ac.createBiquadFilter();s.bedF.type='lowpass';s.bedF.frequency.value=400;
+  s.bedG=ac.createGain();s.bedG.gain.value=0;bs.connect(s.bedF);s.bedF.connect(s.bedG);s.bedG.connect(s.ambD);bs.start();
+  // Ki taşı uğultusu (efekt sesine bağlı)
+  s.humG=ac.createGain();s.humG.gain.value=0;s.humG.connect(s.sb);const tr=ac.createGain();tr.gain.value=.7;tr.connect(s.humG);
+  for(const[f,v]of[[110,.55],[164.8,.35],[220.4,.22],[329.6,.08]]){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(tr);o.start()}
+  const lf=ac.createOscillator(),lg=ac.createGain();lf.frequency.value=.35;lg.gain.value=.3;lf.connect(lg);lg.connect(tr.gain);lf.start()}
+ const oInit=Snd.init;Snd.init=function(){const r=oInit.apply(this,arguments);try{setup()}catch(e){}return r};
+
+ /* ---- konumsal ses: düşman güncellemesi sırasında çalan sesler düşmanın tarafından gelir ---- */
+ const oS=Snd._sfx;Snd._sfx=function(k,st){const ac=this.ac;
+  if(this._px==null||!ac||!ac.createStereoPanner||typeof cam==='undefined'||k==='ui')return oS.apply(this,arguments);
+  const dx=(this._px-(cam.x+W/2))/(W/2),pn=ac.createStereoPanner(),g=ac.createGain();
+  pn.pan.value=Math.max(-.75,Math.min(.75,dx*.6));g.gain.value=Math.abs(dx)>1?Math.max(.45,1-(Math.abs(dx)-1)*.5):1;
+  pn.connect(g);g.connect(this.sb);const sb=this.sb;this.sb=pn;try{return oS.apply(this,arguments)}finally{this.sb=sb}};
+ const oUE=updEnemy;updEnemy=function(e){Snd._px=e.x;try{return oUE.apply(this,arguments)}finally{Snd._px=null}};
+
+ /* ---- uyarlanır dövüş katmanı: keşif müziğinin üstüne taiko + bas nabzı ---- */
+ const oPlay=Snd.play;Snd.play=function(S,s,t,spb){const r=oPlay.apply(this,arguments);
+  if(!this.cl||S2.I<.03||!EXPLORE.has(this.track))return r;
+  const D=this.cl,b=s%8,I=S2.I,root=this.nf(S,0)/2;
+  if(b===0)this.drum(t,.5,52,D);
+  if(b===3&&I>.45)this.drum(t,.22,60,D);
+  if(b===4)this.drum(t,.34,52,D);
+  if(b===6&&I>.6)this.wood(t,.09,D);
+  if(b===7&&I>.75)this.drum(t,.2,72,D);
+  if(b&1&&I>.55)this.n(t,.03,.035,{type:'highpass',f:6500,dest:D});
+  if(b===0||b===5)this.o('triangle',root,t,spb*1.6,.13,{lp:300,dest:D});
+  if(b===0&&(s>>3)%2===1)this.o('sawtooth',root*2,t,spb*7,.035,{a:spb*2,sus:1,lp:700,vib:5,dest:D});
+  return r};
+
+ function resolve(){const s=Snd;if(!s.ac||s.mute)return;const S=s.SONGS[s.track];if(!S||!EXPLORE.has(s.track))return;const t=s.ac.currentTime+.05,D=s.ambD;
+  [0,2,4].forEach((d,i)=>s.pluck(s.nf(S,d+5),t+i*.11,.05,D));s.bell(s.nf(S,10),t+.36,.025,D)}
+
+ /* ---- ortam sesleri ---- */
+ const BED={bamboo:['bandpass',1400,.018],bridges:['highpass',2600,.05],under:['lowpass',160,.11],grave:['bandpass',700,.022],monastery:['lowpass',500,.012],school:['lowpass',300,.02],secret:['highpass',5000,.006],boss:['lowpass',120,.1]};
+ const rnd2=(a,b)=>a+Math.random()*(b-a);
+ const EV={
+  bamboo:[[4,9,(s,t,D)=>{const f=rnd2(2600,3800);for(let i=0,n=2+(Math.random()*3|0);i<n;i++)s.o('sine',f*(i%2?1.12:1),t+i*.09,.07,.035,{to:f*(i%2?.9:1.25),dest:D})}],
+          [2,5,(s,t,D)=>s.n(t,rnd2(.3,.6),.05,{f:rnd2(2500,4200),q:.6,a:.12,dest:D})],
+          [3,7,(s,t,D)=>{for(let i=0;i<8;i++)s.o('sine',4300,t+i*.045,.02,.012,{dest:D})}]],
+  bridges:[[6,12,(s,t,D)=>s.n(t,2.4,.07,{f:300,f2:900,q:.9,a:.9,brown:1,dest:D})],
+           [8,15,(s,t,D)=>s.o('sawtooth',rnd2(90,130),t,.5,.03,{to:rnd2(70,90),lp:420,a:.1,dest:D})]],
+  under:[[1,3,(s,t,D)=>s.drip(t,.05,D)],[9,16,(s,t,D)=>s.n(t,2,.09,{type:'lowpass',f:90,brown:1,a:.6,dest:D})]],
+  grave:[[7,12,(s,t,D)=>s.n(t,3,.06,{f:400,f2:1100,q:7,a:1.2,brown:1,dest:D})],
+         [12,20,(s,t,D)=>{for(let i=0;i<2;i++)s.o('sawtooth',rnd2(560,640),t+i*.32,.17,.022,{to:420,lp:1500,vib:14,dest:D})}]],
+  monastery:[[15,25,(s,t,D)=>s.bell(rnd2(196,262),t,.03,D)],
+             [6,10,(s,t,D)=>{for(let i=0,n=3+(Math.random()*3|0);i<n;i++)s.o('sine',rnd2(1800,3200),t+i*rnd2(.08,.2),1.2,.012,{dest:D})}]],
+  school:[[.4,1.4,(s,t,D)=>s.n(t,.02,.03,{f:rnd2(1500,3500),q:2,dest:D})],[8,14,(s,t,D)=>s.o('sawtooth',rnd2(80,110),t,.6,.02,{to:70,lp:380,a:.15,dest:D})]],
+  secret:[[7,12,(s,t,D)=>{const b=rnd2(880,1100);[0,4,7,12].forEach((q,i)=>s.o('sine',b*Math.pow(2,q/12),t+i*.13,1,.012,{dest:D}))}]],
+  boss:[[6,11,(s,t,D)=>s.n(t,2.5,.08,{type:'lowpass',f:80,brown:1,a:.8,dest:D})]]};
+
+ function frame(){const s=Snd,ac=s.ac;if(!ac||!s._s2)return;const t=ac.currentTime,sc=G.scene,play=sc==='play'&&P&&G.mode!=='train';
+  // dövüş yoğunluğu
+  let eng=0;if(play&&P.st!=='dead')for(const e of E)if(!e.boss&&e.st!=='dead'&&!e.d.dummy&&ENG.has(e.st)&&Math.abs(e.x-P.x)<380&&Math.abs(e.y-P.y)<200)eng++;
+  S2.eng=eng;S2.It=eng?Math.min(1,.5+.17*eng):0;
+  S2.I+=(S2.It-S2.I)*(S2.It>S2.I?.04:.006);if(S2.I<.01)S2.I=0;
+  s.cl.gain.setTargetAtTime(S2.I*.95,t,.15);
+  if(eng){S2.fightT++;S2.calm=0}else if(S2.fightT){if(++S2.calm>80){if(S2.fightT>240&&!E.some(e=>e.st!=='dead'&&ENG.has(e.st)))resolve();S2.fightT=0}}
+  // tehlike / menü karışımı
+  const menu=P&&sc!=='play'&&sc!=='title'&&sc!=='win',hpR=play?P.hp/maxHp():1,low=play&&P.st!=='dead'&&hpR<.3;
+  s.mLP.frequency.setTargetAtTime(menu?750:low?1500:20000,t,menu?.08:.4);
+  s.mG.gain.setTargetAtTime(menu?.6:low?.85:1,t,.15);
+  if(low&&!s.mute){if(--S2.hb<=0){S2.hb=hpR<.15?40:52;const v=.22*(s.vs||1);s.o('sine',62,t,.13,v,{to:42,dest:s.sb});s.o('sine',58,t+.19,.11,v*.65,{to:40,dest:s.sb})}}else S2.hb=0;
+  // ortam yatağı + olaylar
+  const th=play?(ROOM&&ROOM.theme):null;
+  if(th!==S2.theme){S2.theme=th;S2.amb={};const b=BED[th];if(b){s.bedF.type=b[0];s.bedF.frequency.setTargetAtTime(b[1],t,.3)}s.bedG.gain.setTargetAtTime(b?b[2]:0,t,.8)}
+  s.ambD.gain.setTargetAtTime(menu?.25:S2.I>.3?.45:.9,t,.4);
+  const L=th&&EV[th];if(L&&!s.mute)L.forEach((ev,i)=>{const a=S2.amb;if(a[i]==null)a[i]=t+rnd2(ev[0]*.3,ev[1]*.6);else if(t>=a[i]){try{ev[2](s,t+.02,s.ambD)}catch(e){}a[i]=t+rnd2(ev[0],ev[1])}});
+  // Ki taşı uğultusu
+  let hum=0;if(play)for(const o of OBJS)if(o.k==='K'){const d=Math.hypot(o.x+8-P.x,(o.y-P.y)*1.5);if(d<170)hum=Math.max(hum,(1-d/170)*(G.done[o.id]?.05:.03))}
+  s.humG.gain.setTargetAtTime(s.mute?0:hum,t,.25)}
+ const oStep=step;step=function(){const r=oStep.apply(this,arguments);try{frame()}catch(e){}return r};
+})();
+
+</script>
 </body></html>
 
