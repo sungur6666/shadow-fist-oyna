@@ -7539,5 +7539,68 @@ window.SFPOSE2_INFO={AUTH:[...AUTH]};
 })();
 
 </script>
+<script>
+/* ===== v3.36: hasar sonrası düşman hareketi (HITMOVE) =====
+   - Havada gerçek takla: yön hıza göre (geri savrulan geriye yatar), çıkışta hafif, düşüşte yatay; eskiden sabit hızlı pervane gibi dönüyordu
+   - Yatay hava sürtünmesi (düz çizgi yerine hafif yay)
+   - Yere çarpma: sert düşüşte tek sekme + toz + sarsıntı, ardından sürtünmeli kayma (eskiden anında duruyordu); kayma uçuruma kadar gider, kenarda düşer
+   - Duvar çarpması: kafa hizası da kontrol edilir (uzun düşman duvara dalmaz); çarpınca havaya fırlamak yerine duvara yaslanıp aşağı kayar, toz ve çatlak izi
+   - Ölü bedenler: havada sekme ve sürtünmeli kayma, duvara çarpınca durur
+   - Yerdeyken vurulan düşman vuruş yönünün tersine hafif yaslanır ve ayak tozu çıkarır */
+(()=>{
+ if(window.HITMOVE)return;window.HITMOVE={};
+ const sg=Math.sign,puff=(x,y,n,a)=>{if(typeof FX2!=='undefined'&&FX2.puff)FX2.puff(x,y,n||1,.3,.2,a||.9)};
+ const blocked=(e,nx,s)=>{const w=8*(e.d.s||1),h=e.d.s||1;return wallAt(nx+s*w,e.y-4)||solidAt(nx+s*w,e.y-26*h)||solidAt(nx+s*w,e.y-40*h)};
+ // duvar/kafa denetimli hareket
+ EnemyCombat.move=function(e){const nx=e.x+e.vx;if(Math.abs(e.vx)<.05)return;const s=sg(e.vx);
+  if(blocked(e,nx,s)){if(e.wallOk&&Math.abs(e.vx)>2.4&&e.st!=='dead'){e.wallSide=s;this.wall(e)}else e.vx=0;return}
+  e.x=nx};
+ // duvar çarpması: fırlama yerine yaslan + kay
+ const ow=EnemyCombat.wall;
+ EnemyCombat.wall=function(e){const vx0=e.vx,s=sg(vx0);ow.call(this,e);
+  if(e.st==='dead')return;
+  e.vx=-s*Math.min(1.1,Math.abs(vx0)*.14);e.vy=-1.6;e.wallT=16;e.wallSide=s;
+  const wx=e.x+s*8*(e.d.s||1);for(let i=0;i<3;i++)puff(wx,e.y-10-i*9,1,.8);
+  FX.push({x:wx,y:e.y-26,vx:0,vy:0,l:10,c:'#fff',nog:1})};
+ // havada: sürtünme, takla hedefi, iniş sekmesi ve kayma
+ const oa=EnemyCombat.airborne;
+ EnemyCombat.airborne=function(e){
+  e.vx*=.985;e.tair=(e.tair||0)+1;
+  const bk=e.vx*e.face<0?-1:1,tg=e.vy<0?.35:1.3;e.rt=(e.rt||0)+(bk*tg-(e.rt||0))*.1;
+  if(e.wallT>0){e.wallT--;if(e.vy>0)e.vy*=.55}   // duvara yaslanıp yavaş kayar
+  const vy0=e.vy,vx0=e.vx;oa.call(this,e);
+  if(!e.air&&e.on&&e.st!=='dead'){ // indi
+   const imp=vy0+.34;
+   if(imp>6.5&&!e.bnc){e.bnc=1;e.air=true;e.on=false;e.down=0;e.vy=-imp*.27;e.vx=vx0*.6;e.y-=1;puff(e.x,e.y,2,.9);if(imp>8.5)shake(3);Snd.sfx('punch')}
+   else{e.bnc=0;e.slide=vx0*1.05;e.rt=0;e.tair=0;if(Math.abs(vx0)>1.5)puff(e.x,e.y,2,.8)}}
+ };
+ // yerde: kayma, ölü beden fiziği
+ const ou=updEnemy;
+ updEnemy=function(e){
+  if(e.st==='dead'&&!e.boss){
+   e.dt++;e.vy+=.5;e.y+=e.vy;const vy0=e.vy;land(e,true);
+   if(e.on){ if(vy0>5.5&&!e.cb){e.cb=1;e.on=false;e.vy=-vy0*.25;e.y-=1;e.vx*=.65;puff(e.x,e.y,1,.8)}
+    else{e.cb=0;e.vx*=.86;if(Math.abs(e.vx)<.08)e.vx=0}}
+   if(e.vx){const s=sg(e.vx);if(blocked(e,e.x+e.vx,s))e.vx=0;else if(e.on&&!supportAt(e.x+e.vx+s*4,e.y)){e.x+=e.vx;e.on=false}else e.x+=e.vx}
+   if(e.on&&Math.abs(e.vx)>1&&e.dt%4===0)puff(e.x,e.y,1,.6);
+   return}
+  if(!e.boss&&!e.d.fly&&!e.air&&e.down>0&&e.slide){
+   const s=sg(e.slide),nx=e.x+e.slide;
+   if(Math.abs(e.slide)<.15||blocked(e,nx,s)){e.slide=0}
+   else if(!supportAt(nx+s*4,e.y)){e.x=nx;e.slide=0;e.air=true;e.on=false;e.vy=0}
+   else{e.x=nx;e.slide*=.87;if(G.t%3===0)puff(e.x,e.y,1,.6)}}
+  else if(e.slide)e.slide=0;
+  return ou.apply(this,arguments)};
+ // çizim: gerçek takla ve yerde geri yaslanma
+ const oe=Anim.enemy;
+ Anim.enemy=function(e){const r=oe.apply(this,arguments);
+  if(e.boss||e.d.fly)return r;
+  if(e.st==='dead'&&!e.on)r.rot=0;
+  else if(e.air&&e.st!=='dead')r.rot=e.rt||0;
+  else if(e.stun>0&&!e.air&&e.down<=0){const bk=e.vx*e.face<0?-1:(e.vx*e.face>0?1:-1);r.rot=bk*(.05+.1*Math.min(1,e.stun/10))}
+  return r};
+})();
+
+</script>
 </body></html>
 
