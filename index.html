@@ -7026,5 +7026,99 @@ const oHurt=HitFX.hurt.bind(HitFX);HitFX.hurt=function(p,dmg,fx){oHurt(p,dmg,fx)
 })();
 
 </script>
+<script>
+/* ==========================================================
+   STİL SİLÜETLERİ v2 — 8..19 numaralı stillerin vuruş pozları.
+   1) "Stil rengi": ortak vuruş pozları (AK / base kopyası / MVSEQ / KSEQ) stilin kendi duruşuna göre yeniden biçimlenir:
+      kalça yüksekliği, gövde eğimi, ayak açıklığı, vurmayan elin gardı, baş.
+   2) Elle yazılmış hafif saldırı dizileri (MVSEQ): her stilin en çok kullanılan vuruşları kendi silüetiyle.
+   Poz dizisi: [kalça Y, eğilme, ön ayak x,y, arka ayak x,y, ön el x,y, arka el x,y, baş x,y]
+   ========================================================== */
+(()=>{
+if(window.SFPOSE2)return;window.SFPOSE2=1;
+const N0=AK.N.slice(),BASE={};for(const s of SF20D.styles)BASE[s.i]=s.base;
+const IDX=[8,9,10,11,12,13,14,15,16,17,18,19];
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const mix=(a,b,k)=>a+(b-a)*k;
+// ---- 1) stil rengi ----
+function flav(si,A,ref,o){o=o||{};const S=STANCE[si],R=ref||N0,B=A.slice();
+ const kh=o.kh!=null?o.kh:.7,kl=o.kl!=null?o.kl:.55,kf=o.kf!=null?o.kf:.5,kb=o.kb!=null?o.kb:.6,g=o.g!=null?o.g:.4,kd=o.kd!=null?o.kd:.7;
+ B[0]+=(S[0]-R[0])*kh;B[1]+=(S[1]-R[1])*kl;
+ if(A[3]>-3)B[2]+=(S[2]-R[2])*kf;
+ if(A[5]>-3)B[4]+=(S[4]-R[4])*kb;
+ const fs=A[6]>=15,bs=A[8]>=15;
+ if(!fs){B[6]=mix(A[6],S[6],g);B[7]=mix(A[7],S[7],g)}
+ if(!bs){B[8]=mix(A[8],S[8],g);B[9]=mix(A[9],S[9],g)}
+ B[10]+=(S[10]-R[10])*kd;B[11]+=(S[11]-R[11])*kd;
+ return B}
+const flavTri=(si,T,ref,o)=>T.map(A=>flav(si,A,ref,o));
+// AKS: ortak türler (stilin temelinden kopya olanlar temel duruşa, genel olanlar AK.N'ye göre)
+const GENERIC=['elbow','charge','palm','spalm','mtpull','snake','hook','hammer','upper','claw','mgrab','dive','sweep','round','knee','spin','mk1','mk2','wc1','wc2','mtchop','rise','slide','back','axe','pound'];
+for(const si of IDX){const b=BASE[si],bS=STANCE[b],S=AKS[si];
+ for(const k of Object.keys(S)){if(S[k]&&S[k].__f)continue;S[k]=flavTri(si,S[k],bS);S[k].__f=1}
+ for(const k of GENERIC){if(S[k]||!AK[k]||!Array.isArray(AK[k][0]))continue;S[k]=flavTri(si,AK[k],N0);S[k].__f=1}}
+// MVSEQ kopyaları: stil numarası 8..19 olan kayıtlar genel poz tablosundan geldiği için N0'a göre
+const AUTH=new Set();
+function flavSeq(si,seq){return seq.map(q=>q.A?Object.assign({},q,{A:flav(si,q.A,N0,{kh:.55,kl:.45,kf:.35,kb:.45,g:.35})}):q)}
+for(const k of Object.keys(MVSEQ)){const[s,n]=k.split('|'),si=+s;if(si<8||si>19)continue;MVSEQ[k]=flavSeq(si,MVSEQ[k])}
+// KSEQ: tekme dizileri (temel stilin dizisi) — gövde/gard stile göre
+for(const si of IDX){const b=BASE[si],src=KSEQ[b];if(!src)continue;const o={};
+ for(const key of Object.keys(src))o[key]=src[key].map(q=>q.A?Object.assign({},q,{A:flav(si,q.A,STANCE[b],{kh:.6,kl:.5,kf:0,kb:.4,g:.5,kd:.7})}):q);
+ KSEQ[si]=o}
+// ---- 2) elle yazılmış diziler ----
+const KS2=(t,A,x)=>Object.assign({t,A},x||{});
+// poz kurucu: stilin duruşundan başlar, adlandırılmış alanları değiştirir
+function mk(si,o){const A=STANCE[si].slice();if(o.h!=null)A[0]=o.h;if(o.l!=null)A[1]=o.l;if(o.ff){A[2]=o.ff[0];A[3]=o.ff[1]}if(o.bf){A[4]=o.bf[0];A[5]=o.bf[1]}
+ if(o.fh){A[6]=o.fh[0];A[7]=o.fh[1]}if(o.bh){A[8]=o.bh[0];A[9]=o.bh[1]}if(o.hd){A[10]=o.hd[0];A[11]=o.hd[1]}return A}
+// hafif vuruş: hazırlık (W) → vuruş (X) → bekleme → toparlanma
+function light(si,id,W,X,xo,wo){const m=MOVES[id];if(!m)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=[KS2(0,null),KS2(.75,mk(si,W),wo),KS2(1.12,mk(si,X),xo),KS2(1.85,mk(si,X),xo&&xo.rot!=null?Object.assign({},xo,{rot:xo.rot*.9}):xo),KS2(2.45,null),KS2(3,null)];AUTH.add(k)}
+// ikili vuruş: iki darbe (X1, X2)
+function pair(si,id,W,X1,X2,o1,o2){const m=MOVES[id];if(!m)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=[KS2(0,null),KS2(.7,mk(si,W)),KS2(1.05,mk(si,X1),o1),KS2(1.4,mk(si,X1),o1),KS2(1.55,mk(si,X2),o2),KS2(1.9,mk(si,X2),o2),KS2(2.5,null),KS2(3,null)];AUTH.add(k)}
+// DEMİR BEDEN (8): geniş, göğüs önde; vuruşlar gövde ağırlığıyla
+light(8,'ib_l1',{h:-13,l:-3,fh:[3,-9],bh:[3,5],hd:[-1,0]},{h:-11,l:9,ff:[14,0],bf:[-12,0],fh:[15,-5],bh:[2,6],hd:[4,2]});
+light(8,'ib_l2',{h:-13,l:-5,ff:[9,0],fh:[3,3],bh:[2,6],hd:[-2,0]},{h:-10,l:12,ff:[15,0],bf:[-12,0],fh:[8,4],bh:[3,5],hd:[5,3]});
+// SHAOLIN (9): dik, bir yumruk belde; avuç dikey
+light(9,'sl_l1',{l:-2,fh:[5,-5],bh:[-3,6]},{h:-14,l:4,ff:[10,0],bf:[-9,0],fh:[24,-5],bh:[-3,6],hd:[1,0]});
+light(9,'sl_l2',{l:-3,fh:[8,-8],bh:[-4,2],hd:[-1,0]},{h:-14,l:3,ff:[10,0],bf:[-9,0],fh:[7,-9],bh:[17,-6],hd:[1,0]},{rot:.05});
+light(9,'sl_l3',{fh:[6,-6],bh:[0,5]},{h:-14,l:5,ff:[11,0],bf:[-9,0],fh:[22,-8],bh:[4,-16],hd:[1,-1]});
+// BAJIQUAN (10): alçak, dirsek ve omuz; güçlü adım
+light(10,'bj_l1',{h:-11,l:-1,ff:[9,0],fh:[3,-9],bh:[4,3]},{h:-9,l:11,ff:[14,0],bf:[-12,0],fh:[12,-4],bh:[3,4],hd:[4,2]});
+light(10,'bj_l2',{h:-11,l:-3,ff:[8,0],fh:[5,2],bh:[3,5]},{h:-7,l:15,ff:[16,0],bf:[-13,0],fh:[4,3],bh:[2,5],hd:[6,3]});
+// TAI CHI (11): dik, yumuşak yaylar
+light(11,'tc_l1',{l:-3,fh:[5,4],bh:[-1,2]},{h:-14,l:2,ff:[9,0],fh:[21,-4],bh:[3,3]});
+light(11,'tc_l2',{l:-2,fh:[2,-8],bh:[8,-2]},{h:-14,l:3,ff:[9,0],fh:[8,-9],bh:[19,-2]});
+// BAGUAZHANG (12): gövde dönüşlü avuçlar
+light(12,'bg_l1',{l:-6,fh:[-4,-6],bh:[8,-2]},{h:-13,l:3,fh:[22,-5],bh:[-3,-8]},{rot:-.22},{rot:.1});
+light(12,'bg_l2',{l:-5,fh:[8,-2],bh:[-4,-6]},{h:-13,l:3,fh:[-2,-6],bh:[21,-4]},{rot:.2},{rot:-.1});
+light(12,'bg_l3',{l:-6,fh:[-2,-4],bh:[4,-8]},{h:-14,l:2,fh:[22,-6],bh:[-2,-2]},{rot:-.3},{rot:.12});
+// XINGYIQUAN (13): öne eğik, düz hat; arka el karında
+light(13,'xy_l1',{l:-1,ff:[9,0],fh:[8,-4],bh:[6,2]},{h:-14,l:9,ff:[14,0],bf:[-9,0],fh:[24,-1],bh:[6,2],hd:[3,1]});
+light(13,'xy_l2',{h:-13,l:2,fh:[8,5],bh:[6,2]},{h:-16,l:6,ff:[13,0],fh:[18,-13],bh:[7,2],hd:[2,-1]});
+light(13,'xy_l3',{fh:[8,-14],bh:[8,-4]},{h:-13,l:9,ff:[14,0],fh:[18,6],bh:[5,1],hd:[3,1]});
+// HUNG GAR (14): çok alçak at duruşu; pençeler
+light(14,'hg_l1',{h:-8,l:-2,fh:[4,-12],bh:[6,3]},{h:-7,l:6,ff:[16,0],bf:[-15,0],fh:[21,2],bh:[8,2],hd:[2,2]});
+light(14,'hg_l2',{h:-8,fh:[9,3],bh:[6,3]},{h:-7,l:4,ff:[16,0],bf:[-15,0],fh:[22,-8],bh:[7,3],hd:[2,1]});
+// CHOY LI FUT (15): büyük yaylar
+light(15,'cl_l1',{l:-4,fh:[3,10],bh:[3,-8],hd:[-1,0]},{h:-15,l:3,ff:[11,0],fh:[19,-11],bh:[-5,-6]});
+light(15,'cl_l2',{l:-6,fh:[-5,-6],bh:[10,-8]},{h:-13,l:5,ff:[11,0],fh:[16,-8],bh:[-6,-4]},{rot:.1});
+light(15,'cl_l3',{h:-17,fh:[2,-20],bh:[4,-18]},{h:-12,l:8,ff:[12,0],fh:[16,7],bh:[2,3],hd:[3,2]});
+// KARTAL PENÇESİ (16): yüksekte pençeler
+light(16,'ec_l1',{l:-3,fh:[4,-14],bh:[3,-12]},{h:-12,l:5,ff:[11,0],bf:[-9,0],fh:[20,-10],bh:[8,-9],hd:[2,-1]});
+light(16,'ec_l2',{l:-2,fh:[12,-9],bh:[8,-2]},{h:-12,l:6,ff:[11,0],fh:[18,-4],bh:[11,-2],hd:[2,0]});
+// LEOPAR (17): alçak, öne uzanan hızlı yumruk
+light(17,'lp_l1',{h:-9,l:6,fh:[6,4],bh:[4,3]},{h:-8,l:10,ff:[12,0],bf:[-10,0],fh:[22,3],bh:[4,6],hd:[4,3]});
+light(17,'lp_l2',{h:-9,l:6,fh:[4,6],bh:[8,4]},{h:-8,l:10,ff:[12,0],bf:[-10,0],fh:[4,6],bh:[20,3],hd:[4,3]});
+// SHUAI JIAO (18): kavrama
+light(18,'sj_l1',{fh:[6,-4],bh:[4,2]},{h:-12,l:8,ff:[13,0],bf:[-10,0],fh:[19,-5],bh:[17,2],hd:[3,1]});
+light(18,'sj_l2',{l:2,fh:[20,-3],bh:[18,1]},{h:-11,l:-5,ff:[9,0],bf:[-10,0],fh:[0,-2],bh:[2,2],hd:[-2,0]});
+// SANDA (19): boks gardı
+light(19,'sd_l1',{l:1,fh:[10,-10],bh:[5,-9]},{h:-15,l:3,ff:[8,0],fh:[24,-10],bh:[5,-9],hd:[1,0]});
+light(19,'sd_l2',{l:-1,fh:[8,-10],bh:[2,-8]},{h:-14,l:7,ff:[9,0],bf:[-8,0],fh:[8,-10],bh:[22,-9],hd:[2,0]},{rot:.12});
+window.SFPOSE2_INFO={AUTH:[...AUTH]};
+})();
+
+</script>
 </body></html>
 
