@@ -7162,6 +7162,125 @@ light(19,'sd_h2',{h:-15,l:-1,ff:[3,-3],fh:[6,-10],bh:[5,-9]},{h:-16,l:5,ff:[13,-
 (()=>{const m=MOVES.sl_h1;if(!m||!KSEQ[9]||!KSEQ[9].kick)return;const k=m.st+'|'+m.n;
  MVSEQ[k]=KSEQ[9].kick.map(q=>q.A?Object.assign({},q,{A:q.A.map((v,i)=>i===3&&v<-6?v-5:v),ly:(q.turn>=.9&&q.turn<=1.1)?-5:(q.ly||0)}):q);AUTH.add(k)})();
 
+
+// ---- 4) çok vuruşlu zincirler (v3.31) ----
+// chain(si,id,W,hits,endO): hazırlık W → ardışık vuruş pozları (tau 1.0–1.9 arasına yayılır) → toparlanma
+function chain(si,id,W,hits,wo){const m=MOVES[id];if(!m)return;const k=m.st+'|'+m.n,n=hits.length,seq=[KS2(0,null),KS2(.72,mk(si,W),wo)];
+ const t0=1.04,t1=1.86,dt=n>1?(t1-t0-.06)/(n-1):0;
+ hits.forEach((h,i)=>{const t=t0+i*dt,o=h[1]||{};seq.push(KS2(t,mk(si,h[0]),o));seq.push(KS2(t+.06,mk(si,h[0]),o))});
+ seq.push(KS2(2.5,null));seq.push(KS2(3,null));MVSEQ[k]=seq;AUTH.add(k)}
+// SHAOLIN (9) On Sekiz Arhat: dik duruş, dönüşümlü yumruk, orta/alçak/yüksek, son çift avuç
+chain(9,'sl_sp',{l:-2,fh:[5,-5],bh:[-3,6]},[
+ [{h:-14,l:4,ff:[10,0],bf:[-9,0],fh:[24,-5],bh:[-3,6],hd:[1,0]}],
+ [{h:-14,l:4,ff:[10,0],bf:[-9,0],fh:[-2,6],bh:[23,-6],hd:[1,0]}],
+ [{h:-12,l:7,ff:[12,0],bf:[-10,0],fh:[22,2],bh:[-3,6],hd:[2,1]}],
+ [{h:-15,l:3,ff:[10,0],bf:[-9,0],fh:[-2,6],bh:[19,-13],hd:[1,-1]}],
+ [{h:-14,l:6,ff:[13,0],bf:[-10,0],fh:[24,-6],bh:[22,-9],hd:[3,0]}]]);
+// BAGUAZHANG (12) Dokuz Saray Yürüyüşü: daire üzerinde yürürken dönüşümlü avuç
+chain(12,'bg_sp',{l:-6,fh:[-4,-6],bh:[8,-2]},[
+ [{h:-13,l:3,ff:[11,0],fh:[22,-5],bh:[-3,-8]},{rot:-.24}],
+ [{h:-14,l:2,ff:[-5,0],bf:[-12,0],fh:[-3,-4],bh:[22,-6]},{rot:.26}],
+ [{h:-13,l:4,ff:[12,0],fh:[21,-9],bh:[-4,-6]},{rot:-.3}],
+ [{h:-14,l:3,ff:[-4,0],bf:[-13,0],fh:[-2,-2],bh:[22,-4]},{rot:.3}],
+ [{h:-12,l:6,ff:[13,0],bf:[-10,0],fh:[24,-6],bh:[20,-8]},{rot:-.12}]],{rot:.1});
+// SANDA (19) Kombine Seri: jab-jab-çapraz-kanca-çapraz, sekme
+chain(19,'sd_sp',{l:1,fh:[10,-10],bh:[5,-9]},[
+ [{h:-15,l:3,ff:[8,0],fh:[24,-10],bh:[5,-9],hd:[1,0]}],
+ [{h:-14,l:3,ff:[9,0],fh:[24,-9],bh:[5,-9],hd:[1,0]}],
+ [{h:-15,l:7,ff:[9,0],bf:[-8,0],fh:[8,-10],bh:[22,-9],hd:[2,0]},{rot:.12}],
+ [{h:-14,l:4,ff:[10,0],fh:[17,-14],bh:[4,-8],hd:[0,0]},{rot:-.16}],
+ [{h:-15,l:8,ff:[10,0],bf:[-9,0],fh:[8,-9],bh:[24,-8],hd:[3,0]},{rot:.14}]]);
+// HUNG GAR (14) Kaplan-Turna Formu: çok alçak at; kaplan pençesi → turna gagası → alçak pençe
+chain(14,'hg_h1',{h:-8,l:-2,fh:[6,-12],bh:[8,-10]},[
+ [{h:-7,l:5,ff:[16,0],bf:[-15,0],fh:[21,-12],bh:[17,-10],hd:[2,2]}],
+ [{h:-7,l:5,ff:[16,0],bf:[-15,0],fh:[24,-3],bh:[7,3],hd:[2,2]}],
+ [{h:-7,l:5,ff:[16,0],bf:[-15,0],fh:[18,4],bh:[16,-3],hd:[2,2]}],
+ [{h:-7,l:6,ff:[17,0],bf:[-15,0],fh:[22,-9],bh:[20,-9],hd:[3,2]}]]);
+// CHOY LI FUT (15) Yel Değirmeni: büyük dairesel kollar
+chain(15,'cl_h1',{l:-6,fh:[-5,-6],bh:[10,-8]},[
+ [{h:-14,l:2,ff:[11,0],fh:[8,-23],bh:[-6,-4]},{rot:-.14}],
+ [{h:-13,l:6,ff:[12,0],fh:[22,-7],bh:[-6,-5]},{rot:.18}],
+ [{h:-14,l:2,ff:[11,0],fh:[-5,-4],bh:[9,-23]},{rot:.14}],
+ [{h:-13,l:6,ff:[12,0],fh:[-6,-5],bh:[22,-7]},{rot:-.18}],
+ [{h:-12,l:8,ff:[13,0],bf:[-11,0],fh:[24,-8],bh:[18,-12]},{rot:.1}]]);
+// LEOPAR (17) Leopar Atılışı: alçak, ileri atılma, kısa hızlı yumruklar
+chain(17,'lp_h1',{h:-9,l:6,fh:[6,4],bh:[4,3]},[
+ [{h:-8,l:10,ff:[14,0],bf:[-10,0],fh:[22,3],bh:[4,6],hd:[4,3]}],
+ [{h:-8,l:12,ff:[16,0],bf:[-9,0],fh:[4,6],bh:[22,3],hd:[5,3]}],
+ [{h:-9,l:15,ff:[18,0],bf:[-8,0],fh:[24,1],bh:[6,6],hd:[7,4]}]]);
+// LEOPAR (17) Pençe Fırtınası: yüksek-alçak pençe yağmuru
+chain(17,'lp_sp',{h:-9,l:4,fh:[8,-3],bh:[8,-3]},[
+ [{h:-8,l:8,ff:[12,0],bf:[-10,0],fh:[22,-9],bh:[5,5],hd:[3,2]}],
+ [{h:-8,l:8,ff:[12,0],bf:[-10,0],fh:[5,5],bh:[22,0],hd:[3,2]}],
+ [{h:-9,l:10,ff:[13,0],bf:[-9,0],fh:[21,-13],bh:[6,4],hd:[4,2]}],
+ [{h:-9,l:10,ff:[13,0],bf:[-9,0],fh:[5,5],bh:[22,3],hd:[4,3]}],
+ [{h:-8,l:9,ff:[12,0],bf:[-10,0],fh:[22,-6],bh:[19,-8],hd:[4,2]}],
+ [{h:-9,l:13,ff:[15,0],bf:[-9,0],fh:[24,-4],bh:[23,-10],hd:[6,3]}]]);
+
+
+// ---- 5) stile özel tekme varyantları (v3.31) ----
+// kv(si,spec): KSEQ[si].kick karelerini yükseklik (lift: + alçak, - yüksek), uzanma (reach), eller (fh/bh), kalça (h), eğim (l), dönüş (rot), sıçrama (ly) ile biçimler
+function kv(si,sp){const S=KSEQ[si];if(!S||!S.kick)return;const seq=S.kick;let mr=1;for(const q of seq)if(q.A)mr=Math.max(mr,-q.A[3]);
+ S.kick=seq.map(q=>{if(!q.A)return q;const A=q.A.slice(),w=cl(-A[3]/mr,0,1),sg=(q.turn||0)>.5?-1:1,hw=q.t>=.25?(.45+.55*w)*.75:0;
+  if(sp.lift)A[3]+=sp.lift*w;if(sp.reach)A[2]*=1+sp.reach*w;
+  if(sp.fh){A[6]=mix(A[6],sp.fh[0]*sg,hw);A[7]=mix(A[7],sp.fh[1],hw)}
+  if(sp.bh){A[8]=mix(A[8],sp.bh[0]*sg,hw);A[9]=mix(A[9],sp.bh[1],hw)}
+  if(sp.h)A[0]+=sp.h*w;if(sp.l)A[1]+=sp.l*w;
+  const o=Object.assign({},q,{A});if(sp.rot)o.rot=(q.rot||0)+sp.rot*w;if(sp.ly)o.ly=(q.ly||0)+sp.ly*w;return o})}
+kv(8,{lift:3,reach:.1,h:1,l:-2,fh:[4,-6],bh:[4,-5]});                 // Demir Beden: kısa, ağır itme tekmesi, yumruklar göğüste
+kv(9,{lift:-4,reach:.1,ly:-3,fh:[10,-6],bh:[-4,-14]});                // Shaolin: yüksek çırpma, bir avuç önde bir el yukarıda
+kv(10,{lift:4,reach:.15,l:6,fh:[5,-2],bh:[3,3]});                     // Bajiquan: alçak ezme, dirsekler önde
+kv(11,{lift:-2,l:-3,fh:[12,-9],bh:[-10,-9]});                         // Tai Chi: dik, kollar iki yana açık topuk tekmesi
+kv(12,{lift:-1,rot:.22,ly:-2,fh:[14,-8],bh:[-6,-12]});                // Bagua: dönüşlü tekme, avuç uzanır
+kv(13,{reach:.15,l:8,fh:[16,-8],bh:[6,2]});                           // Xingyi: öne eğik düz hat
+kv(14,{lift:5,l:-3,fh:[4,-4],bh:[4,-4]});                             // Hung Gar: at duruşundan alçak tekme, yumruklar korumada
+kv(15,{lift:-1,reach:.1,rot:-.2,fh:[-6,-8],bh:[14,-10]});             // Choy Li Fut: karşı kol savurur, gövde döner
+kv(16,{lift:-3,ly:-6,fh:[8,-15],bh:[4,-14]});                         // Kartal: sıçrayarak yüksek tekme, pençeler yukarıda
+kv(17,{lift:4,h:1,l:6,reach:.1,fh:[8,2],bh:[4,3]});                   // Leopar: alçak, hızlı kısa tekme
+kv(18,{lift:2,l:4,fh:[15,-4],bh:[13,-1]});                            // Shuai Jiao: eller kavramaya hazır öne uzanır
+kv(19,{lift:-1,l:-1,fh:[10,-12],bh:[6,-11]});                         // Sanda: boks gardı yüzde
+for(const si of IDX)AUTH.add('kick|'+si);
+
+
+// ---- 6) eski stiller 1..7: hafif saldırılar (v3.31) ----
+// ortak kimlikler (l1, l2, body) tüm stillerde aynı olduğundan anahtar 's<stil>|<id>' olarak yazılır; Anim.kai sarmalayıcısı okur
+(()=>{const old=Anim.kai;Anim.kai=function(p){const r=old.call(this,p);
+ if(p.st==='atk'){const m=MOVES[p.mv],mq=m&&MVSEQ['s'+p.style+'|'+p.mv];
+  if(mq&&(p.on||m.air)){const a0=p.su,a1=a0+m.ac,tau=p.stT<a0?p.stT/Math.max(1,a0):p.stT<a1?1+(p.stT-a0)/m.ac:2+Math.min(1,(p.stT-a1)/m.rc);r.ks=kseqPose(p.style,mq,tau)}}
+ return r}})();
+function lightK(key,si,W,X,xo,wo){MVSEQ[key]=[KS2(0,null),KS2(.75,mk(si,W),wo),KS2(1.12,mk(si,X),xo),KS2(1.85,mk(si,X),xo&&xo.rot!=null?Object.assign({},xo,{rot:xo.rot*.9}):xo),KS2(2.45,null),KS2(3,null)];AUTH.add(key)}
+function chainK(key,si,W,hits,wo){const n=hits.length,seq=[KS2(0,null),KS2(.72,mk(si,W),wo)],t0=1.04,t1=1.86,dt=n>1?(t1-t0-.06)/(n-1):0;
+ hits.forEach((h,i)=>{const t=t0+i*dt,o=h[1]||{};seq.push(KS2(t,mk(si,h[0]),o));seq.push(KS2(t+.06,mk(si,h[0]),o))});
+ seq.push(KS2(2.5,null));seq.push(KS2(3,null));MVSEQ[key]=seq;AUTH.add(key)}
+const nm=id=>MOVES[id]&&(MOVES[id].st+'|'+MOVES[id].n);
+// TURNA (1): kanatlar; gagayla uzun mesafe, diğer kol geride açık
+lightK('s1|l1',1,{l:-2,fh:[8,-12],bh:[-6,-10]},{h:-15,l:4,ff:[10,0],fh:[24,-12],bh:[-9,-10],hd:[2,-1]});
+lightK('s1|l2',1,{l:-2,fh:[-4,-10],bh:[8,-13]},{h:-15,l:4,ff:[10,0],fh:[-8,-10],bh:[24,-12],hd:[2,-1]},{rot:.06});
+// YILAN (2): alçak, kıvrık; bilek kancalı sokma
+lightK('s2|l1',2,{h:-11,l:3,fh:[6,-4],bh:[3,-14]},{h:-10,l:10,ff:[11,0],bf:[-10,0],fh:[24,-6],bh:[4,-14],hd:[4,2]});
+lightK('s2|l2',2,{h:-11,l:3,fh:[3,-14],bh:[6,-4]},{h:-10,l:10,ff:[11,0],bf:[-10,0],fh:[4,-14],bh:[23,-5],hd:[4,2]},{rot:.08});
+(()=>{const k=nm('l3_2');if(k)lightK(k,2,{h:-11,l:2,fh:[6,-8],bh:[3,-13]},{h:-10,l:11,ff:[12,0],bf:[-10,0],fh:[24,-14],bh:[4,-12],hd:[5,2]})})();
+// EJDERHA (3): akışkan, sarmal; gövde dönüşü
+lightK('s3|l1',3,{l:-4,fh:[4,-6],bh:[-5,-10]},{h:-14,l:3,ff:[10,0],fh:[23,-8],bh:[-7,-10],hd:[2,0]},{rot:.16},{rot:-.08});
+lightK('s3|l2',3,{l:-4,fh:[-4,-8],bh:[6,-6]},{h:-14,l:3,ff:[10,0],fh:[-6,-10],bh:[22,-8],hd:[2,0]},{rot:-.18},{rot:.08});
+(()=>{const k=nm('l3_3');if(k)lightK(k,3,{l:-5,fh:[2,-4],bh:[-6,-8]},{h:-13,l:4,ff:[11,0],fh:[21,-9],bh:[-8,-12],hd:[3,0]},{rot:.22},{rot:-.12})})();
+// WING CHUN (4): orta hat, kısa ve sıkı; arka el merkezde korur
+lightK('s4|l1',4,{l:0,fh:[10,-10],bh:[5,-9]},{h:-14,l:3,ff:[9,0],fh:[20,-10],bh:[6,-9],hd:[1,0]});
+lightK('s4|l2',4,{l:0,fh:[6,-9],bh:[10,-10]},{h:-14,l:3,ff:[9,0],fh:[6,-9],bh:[20,-10],hd:[1,0]},{rot:.06});
+(()=>{const k=nm('l3_4');if(k)chainK(k,4,{fh:[10,-10],bh:[6,-9]},[[{h:-14,l:3,ff:[9,0],fh:[21,-10],bh:[6,-9],hd:[1,0]}],[{h:-14,l:3,ff:[9,0],fh:[6,-9],bh:[21,-10],hd:[1,0]}],[{h:-14,l:4,ff:[10,0],fh:[21,-10],bh:[6,-9],hd:[2,0]}],[{h:-14,l:4,ff:[10,0],fh:[7,-9],bh:[22,-10],hd:[2,0]}]])})();
+// SARHOŞ USTA (5): dengesiz sallanma; kollar savrulur, baş düşer
+lightK('s5|l1',5,{l:-8,fh:[-6,-8],bh:[8,-12]},{h:-13,l:13,ff:[13,0],bf:[-9,0],fh:[22,-3],bh:[-8,-12],hd:[5,3]},{rot:.18},{rot:-.12});
+lightK('s5|l2',5,{l:6,fh:[8,-12],bh:[-6,-6]},{h:-13,l:-4,ff:[8,0],bf:[-11,0],fh:[-8,-12],bh:[21,-4],hd:[-3,2]},{rot:-.22},{rot:.14});
+(()=>{const k=nm('l3_5');if(k)lightK(k,5,{l:-9,fh:[-4,-6],bh:[6,-10]},{h:-12,l:15,ff:[14,0],bf:[-8,0],fh:[8,-4],bh:[-6,-10],hd:[6,3]},{rot:.3},{rot:-.2})})();
+// MAYMUN (6): kambur, sekmeli; yandan tırmık
+lightK('s6|l1',6,{h:-9,l:5,fh:[6,3],bh:[-3,-10]},{h:-8,l:11,ff:[12,0],bf:[-10,0],fh:[22,-4],bh:[-4,-12],hd:[5,3]},{ly:-2});
+lightK('s6|l2',6,{h:-9,l:5,fh:[-3,-10],bh:[6,3]},{h:-8,l:11,ff:[12,0],bf:[-10,0],fh:[-4,-12],bh:[21,-2],hd:[5,3]},{ly:-2,rot:.08});
+(()=>{const k=nm('l3_6');if(k)chainK(k,6,{h:-9,l:6,fh:[6,3],bh:[4,3]},[[{h:-8,l:10,ff:[12,0],bf:[-10,0],fh:[21,-8],bh:[4,4],hd:[4,3]}],[{h:-8,l:10,ff:[12,0],bf:[-10,0],fh:[4,4],bh:[21,-2],hd:[4,3]}],[{h:-9,l:12,ff:[13,0],bf:[-9,0],fh:[22,0],bh:[19,-10],hd:[5,3]}]])})();
+// MANTİS (7): kancalı bilek; dönüşümlü çengel
+lightK('s7|l1',7,{l:-3,fh:[8,-12],bh:[9,-8]},{h:-14,l:5,ff:[10,0],bf:[-9,0],fh:[21,-11],bh:[10,-8],hd:[2,0]});
+lightK('s7|l2',7,{l:-3,fh:[9,-8],bh:[8,-12]},{h:-14,l:5,ff:[10,0],bf:[-9,0],fh:[10,-8],bh:[20,-11],hd:[2,0]},{rot:.08});
+(()=>{const k=nm('l3_7');if(k)chainK(k,7,{l:-3,fh:[8,-12],bh:[9,-8]},[[{h:-14,l:5,ff:[10,0],fh:[21,-12],bh:[9,-8],hd:[2,0]}],[{h:-14,l:5,ff:[10,0],fh:[8,-9],bh:[20,-10],hd:[2,0]}],[{h:-14,l:6,ff:[11,0],fh:[22,-8],bh:[9,-8],hd:[3,0]}],[{h:-14,l:6,ff:[11,0],fh:[9,-9],bh:[21,-12],hd:[3,0]}]])})();
+
 window.SFPOSE2_INFO={AUTH:[...AUTH]};
 })();
 
