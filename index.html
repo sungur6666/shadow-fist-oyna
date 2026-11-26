@@ -7602,5 +7602,24 @@ window.SFPOSE2_INFO={AUTH:[...AUTH]};
 })();
 
 </script>
+<script>
+/* ===== v3.38: tileset görsel düzeltmeleri =====
+   1) Ön plan paralaks siluetleri (siyah çim/diş şeritleri) oda tabanına çiziliyordu; taş/tuğla zemin tilesetlerinin üstüne binip
+      zeminde siyah üçgen dişler gibi görünüyordu. Okul teması ve iç mekân (BackWall) odalarında bu şerit artık çizilmez;
+      yapraklar/parçacıklar kalır. */
+(()=>{
+ if(window.TILEFIX)return;window.TILEFIX=1;
+ const of=Parallax.fg;
+ Parallax.fg=function(){
+  if(!ROOM)return of.apply(this,arguments);
+  const PT=ROOM.para||ROOM.theme,interior=!!(typeof BackWall!=='undefined'&&BackWall.kindFor&&BackWall.kindFor());
+  const ts=ROOM.ts32||(typeof TS32_ROOM!=='undefined'?TS32_ROOM[ROOMID]:'');
+  if(PT==='school'||interior||(ts&&!['n_bamboo','n_bridges','n_grave'].includes(ts))){
+   const P2=this.build(PT),f=P2.fg;P2.fg=null;
+   try{return of.apply(this,arguments)}finally{P2.fg=f}}
+  return of.apply(this,arguments)};
+})();
+
+</script>
 </body></html>
 
