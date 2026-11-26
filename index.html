@@ -7220,8 +7220,8 @@ chain(17,'lp_sp',{h:-9,l:4,fh:[8,-3],bh:[8,-3]},[
 
 // ---- 5) stile özel tekme varyantları (v3.31) ----
 // kv(si,spec): KSEQ[si].kick karelerini yükseklik (lift: + alçak, - yüksek), uzanma (reach), eller (fh/bh), kalça (h), eğim (l), dönüş (rot), sıçrama (ly) ile biçimler
-function kv(si,sp){const S=KSEQ[si];if(!S||!S.kick)return;const seq=S.kick;let mr=1;for(const q of seq)if(q.A)mr=Math.max(mr,-q.A[3]);
- S.kick=seq.map(q=>{if(!q.A)return q;const A=q.A.slice(),w=cl(-A[3]/mr,0,1),sg=(q.turn||0)>.5?-1:1,hw=q.t>=.25?(.45+.55*w)*.75:0;
+function kv(si,sp,key){key=key||'kick';const S=KSEQ[si];if(!S||!S[key])return;const seq=S[key];let mr=1;for(const q of seq)if(q.A)mr=Math.max(mr,-q.A[3]);
+ S[key]=seq.map(q=>{if(!q.A)return q;const A=q.A.slice(),w=cl(-A[3]/mr,0,1),sg=(q.turn||0)>.5?-1:1,hw=q.t>=.25?(.45+.55*w)*.75:0;
   if(sp.lift)A[3]+=sp.lift*w;if(sp.reach)A[2]*=1+sp.reach*w;
   if(sp.fh){A[6]=mix(A[6],sp.fh[0]*sg,hw);A[7]=mix(A[7],sp.fh[1],hw)}
   if(sp.bh){A[8]=mix(A[8],sp.bh[0]*sg,hw);A[9]=mix(A[9],sp.bh[1],hw)}
@@ -7280,6 +7280,83 @@ lightK('s6|l2',6,{h:-9,l:5,fh:[-3,-10],bh:[6,3]},{h:-8,l:11,ff:[12,0],bf:[-10,0]
 lightK('s7|l1',7,{l:-3,fh:[8,-12],bh:[9,-8]},{h:-14,l:5,ff:[10,0],bf:[-9,0],fh:[21,-11],bh:[10,-8],hd:[2,0]});
 lightK('s7|l2',7,{l:-3,fh:[9,-8],bh:[8,-12]},{h:-14,l:5,ff:[10,0],bf:[-9,0],fh:[10,-8],bh:[20,-11],hd:[2,0]},{rot:.08});
 (()=>{const k=nm('l3_7');if(k)chainK(k,7,{l:-3,fh:[8,-12],bh:[9,-8]},[[{h:-14,l:5,ff:[10,0],fh:[21,-12],bh:[9,-8],hd:[2,0]}],[{h:-14,l:5,ff:[10,0],fh:[8,-9],bh:[20,-10],hd:[2,0]}],[{h:-14,l:6,ff:[11,0],fh:[22,-8],bh:[9,-8],hd:[3,0]}],[{h:-14,l:6,ff:[11,0],fh:[9,-9],bh:[21,-12],hd:[3,0]}]])})();
+
+
+// ---- 7) v3.32 grup A: 1–7 ağır/karşılık/gövde, Kaplan Kroşesi (stil başına) ----
+// TURNA (1): Yükselen Kanat — topuk yukarı, iki kanat havada (KSEQ tekmesinden türetilir)
+(()=>{const m=MOVES.rise;if(!m||!KSEQ[1]||!KSEQ[1].kick)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=KSEQ[1].kick.map(q=>q.A?Object.assign({},q,{A:q.A.map((v,i)=>i===3&&v<-4?v-5:i===6||i===8?(q.t>=.25?(i===6?4:-4):v):i===7||i===9?(q.t>=.25?-19:v):v),ly:(q.ly||0)+((q.turn>=.9&&q.turn<=1.1)?-5:0)}):q);AUTH.add(k)})();
+// TURNA Döner Tekmesi (hv_1): sıçrayıp dönen yan tekme, kanatlar açık
+(()=>{const m=MOVES.hv_1;if(!m||!KSEQ[1]||!KSEQ[1].side)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=KSEQ[1].side.map(q=>q.A?Object.assign({},q,{A:q.A.map((v,i)=>q.t>=.25&&(i===6||i===8)?(i===6?13:-13)*((q.turn||0)>.5?-1:1):q.t>=.25&&(i===7||i===9)?-11:v),rot:(q.rot||0)+.18,ly:(q.ly||0)+((q.turn>=.9&&q.turn<=1.1)?-6:0)}):q);AUTH.add(k)})();
+// YILAN (2): Yılan Sokması (karşılık) — alçak, hızlı parmak sokması; Gövde Yumruğu — kıvrılıp alta
+light(2,'counter2',{h:-12,l:3,fh:[5,-6],bh:[3,-14]},{h:-10,l:12,ff:[12,0],bf:[-11,0],fh:[25,-11],bh:[4,-13],hd:[6,2]});
+lightK('s2|body',2,{h:-12,l:4,fh:[5,2],bh:[3,-12]},{h:-9,l:13,ff:[12,0],bf:[-11,0],fh:[23,0],bh:[4,-12],hd:[6,3]});
+// EJDERHA (3): Ejderha Avucu — büyük sarmal avuç
+light(3,'hv_3',{l:-8,fh:[-7,-4],bh:[8,-10],hd:[-2,0]},{h:-13,l:5,ff:[12,0],fh:[25,-8],bh:[-9,-12],hd:[3,0]},{rot:-.3},{rot:.16});
+// WING CHUN (4): Lap Sau Vuruşu — tut-çek-vur; Gövde Yumruğu
+light(4,'hv_4',{l:1,fh:[15,-8],bh:[11,-9]},{h:-14,l:2,ff:[9,0],fh:[5,-6],bh:[22,-10],hd:[1,0]},{rot:.05});
+lightK('s4|body',4,{l:0,fh:[8,-9],bh:[5,-6]},{h:-13,l:6,ff:[10,0],bf:[-8,0],fh:[8,-9],bh:[20,-1],hd:[2,1]});
+// SARHOŞ USTA (5): Kadeh Yumruğu — kadeh tutar gibi yavaş, sonra savrulan yumruk; Gövde Yumruğu
+light(5,'hv_5',{l:-10,fh:[10,-14],bh:[-6,-8],hd:[-3,0]},{h:-12,l:17,ff:[14,0],bf:[-8,0],fh:[24,-4],bh:[-9,-12],hd:[6,3]},{rot:-.3},{rot:.2});
+lightK('s5|body',5,{l:-7,fh:[-5,-4],bh:[7,-10]},{h:-11,l:15,ff:[13,0],bf:[-9,0],fh:[21,1],bh:[-7,-10],hd:[6,4]},{rot:.18},{rot:-.12});
+// MAYMUN (6): Sıçrayan Pençe — çömelip fırlama
+light(6,'hv_6',{h:-6,l:8,fh:[5,5],bh:[3,4]},{h:-13,l:8,ff:[15,-3],bf:[-9,-4],fh:[23,-13],bh:[4,-10],hd:[5,1]},{ly:-6});
+// MANTİS (7): Yakala-Çek — uzan, kancala, geri çek; Gövde Yumruğu
+light(7,'hv_7',{l:-2,fh:[17,-9],bh:[13,-7]},{h:-14,l:-7,ff:[8,0],bf:[-10,0],fh:[3,-4],bh:[2,-3],hd:[-3,0]},{rot:-.1});
+lightK('s7|body',7,{l:-3,fh:[9,-9],bh:[8,-5]},{h:-13,l:7,ff:[11,0],bf:[-9,0],fh:[10,-9],bh:[21,0],hd:[3,1]});
+// KAPLAN KROŞESİ (ortak 'upper'): stil başına yükselen vuruş
+lightK('s8|upper',8,{h:-13,l:-4,fh:[5,5],bh:[3,5]},{h:-9,l:6,ff:[13,0],bf:[-12,0],fh:[15,-23],bh:[3,5],hd:[3,2]});
+lightK('s10|upper',10,{h:-11,l:2,ff:[8,0],fh:[8,4],bh:[3,3]},{h:-8,l:10,ff:[14,0],bf:[-12,0],fh:[10,-19],bh:[4,3],hd:[4,2]});
+lightK('s12|upper',12,{l:-6,fh:[4,3],bh:[-5,-9]},{h:-13,l:4,ff:[11,0],fh:[15,-23],bh:[-6,-13],hd:[2,0]},{rot:.25},{rot:-.12});
+lightK('s14|upper',14,{h:-8,l:-3,fh:[7,5],bh:[7,-5]},{h:-6,l:5,ff:[17,0],bf:[-15,0],fh:[14,-21],bh:[8,-4],hd:[2,1]});
+lightK('s16|upper',16,{h:-12,l:-3,fh:[6,4],bh:[4,-12]},{h:-12,l:4,ff:[11,0],bf:[-9,0],fh:[15,-25],bh:[9,-16],hd:[2,-1]},{ly:-3});
+lightK('s18|upper',18,{h:-12,l:3,fh:[10,2],bh:[9,4]},{h:-11,l:9,ff:[14,0],bf:[-10,0],fh:[13,-17],bh:[11,-13],hd:[4,1]});
+
+
+// ---- 8) v3.32 grup B: 1–7 ve Gölge tekmeleri, Halk Tekmesi, Alçak Hilal, Temel, Gölge ----
+kv(1,{lift:-2,l:-2,ly:-2,fh:[12,-10],bh:[-10,-10]});                  // Turna: kanatlar açık
+kv(2,{lift:3,l:5,h:1,fh:[10,-4],bh:[3,-13]});                         // Yılan: alçak kıvrık, bir el yılan başı
+kv(3,{lift:-1,rot:.15,fh:[12,-8],bh:[-6,-12]});                       // Ejderha: dönüşlü, akıcı kollar
+kv(4,{lift:4,fh:[10,-10],bh:[5,-9]});                                 // Wing Chun: alçak kaval tekmesi, eller merkezde
+kv(5,{rot:.2,l:8,ly:-1,fh:[-6,-8],bh:[12,-4]});                       // Sarhoş Usta: sendeleyerek savrulan tekme
+kv(6,{lift:-1,h:1,ly:-4,fh:[8,3],bh:[4,-12]});                        // Maymun: sekerek, eller aşağıda ve yukarıda
+kv(7,{fh:[14,-12],bh:[9,-8]});                                        // Mantis: kancalı bilekler
+kv(21,{lift:2,h:2,l:7,rot:-.1,fh:[8,-4],bh:[4,-3]});                  // Gölge: alçak, öne eğik
+kv(1,{lift:-3,fh:[13,-11],bh:[-12,-11]},'side');
+kv(3,{rot:.2,fh:[10,-9],bh:[-8,-12]},'side');
+kv(5,{rot:-.2,l:8,fh:[-5,-8],bh:[10,-4]},'side');
+kv(6,{ly:-4,fh:[8,2],bh:[3,-12]},'side');
+kv(21,{l:6,rot:-.12,fh:[6,-3],bh:[3,-2]},'side');
+// SANDA Halk Tekmesi: yüksek yuvarlak tekme, gard yüzde
+(()=>{const m=MOVES.sd_l3;if(!m||!KSEQ[19]||!KSEQ[19].kick)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=KSEQ[19].kick.map(q=>{if(!q.A)return q;const A=q.A.slice(),w=cl(-A[3]/14,0,1);if(q.t>=.25){A[6]=mix(A[6],10*((q.turn||0)>.5?-1:1),.7);A[7]=mix(A[7],-12,.7);A[8]=mix(A[8],6*((q.turn||0)>.5?-1:1),.7);A[9]=mix(A[9],-11,.7)}
+  A[3]-=3*w;return Object.assign({},q,{A,rot:(q.rot||0)+.28*w})});AUTH.add(k)})();
+// GÖLGE Alçak Hilal: yerden süpüren alçak yay
+(()=>{const m=MOVES.sh_k1;if(!m||!KSEQ[21]||!KSEQ[21].kick)return;const k=m.st+'|'+m.n;
+ MVSEQ[k]=KSEQ[21].kick.map(q=>{if(!q.A)return q;const A=q.A.slice(),w=cl(-A[3]/14,0,1);A[3]=A[3]*(1-.7*w)+2*w;A[0]+=3*w;A[1]+=6*w;return Object.assign({},q,{A,rot:(q.rot||0)-.2*w})});AUTH.add(k)})();
+// TEMEL (20): ders kitabı biçimi — dik, temiz çizgiler
+light(20,'l1_20',{l:-1,fh:[8,-9],bh:[4,-8]},{h:-14,l:4,ff:[9,0],fh:[22,-10],bh:[4,-8],hd:[1,0]});
+light(20,'l2_20',{l:-1,fh:[5,-8],bh:[8,-9]},{h:-14,l:4,ff:[9,0],fh:[5,-8],bh:[22,-10],hd:[1,0]},{rot:.08});
+light(20,'l3_20',{h:-15,l:-2,fh:[9,-21],bh:[3,-8]},{h:-12,l:7,ff:[11,0],fh:[16,4],bh:[3,-6],hd:[3,2]});
+light(20,'hv_20',{l:-4,fh:[5,-6],bh:[3,-8]},{h:-13,l:6,ff:[11,0],bf:[-9,0],fh:[24,-9],bh:[4,-8],hd:[2,0]});
+light(20,'up_20',{h:-13,l:-3,fh:[6,5],bh:[3,-8]},{h:-10,l:5,ff:[12,0],fh:[14,-23],bh:[3,-8],hd:[3,2]});
+// GÖLGE (21): alçak, öne eğik, uzun erişim, baş eğik
+light(21,'l1_21',{h:-11,l:6,fh:[8,0],bh:[4,-4]},{h:-10,l:12,ff:[12,0],bf:[-10,0],fh:[25,-6],bh:[3,-3],hd:[6,3]});
+light(21,'l2_21',{l:4,fh:[10,-8],bh:[6,0]},{h:-11,l:14,ff:[13,0],fh:[9,-6],bh:[3,-2],hd:[6,3]},{rot:.1});
+light(21,'l3_21',{l:3,fh:[4,-14],bh:[3,-12]},{h:-11,l:12,ff:[13,0],bf:[-10,0],fh:[22,-4],bh:[18,-10],hd:[6,2]});
+light(21,'hv2_21',{h:-12,l:5,fh:[7,4],bh:[3,-3]},{h:-9,l:9,ff:[13,0],fh:[13,-22],bh:[3,-3],hd:[5,0]});
+light(21,'sh_hunt',{h:-9,l:8,ff:[6,0],fh:[6,0],bh:[4,0]},{h:-9,l:18,ff:[20,0],bf:[-7,0],fh:[26,-5],bh:[2,-3],hd:[8,4]});
+(()=>{const m=MOVES.hv_21;if(m)chain(21,'hv_21',{h:-10,l:8,fh:[6,-2],bh:[4,-2]},[
+ [{h:-10,l:13,ff:[14,0],bf:[-10,0],fh:[24,-8],bh:[3,-2],hd:[6,3]}],
+ [{h:-10,l:13,ff:[14,0],bf:[-10,0],fh:[3,-2],bh:[24,-3],hd:[6,3]},{rot:.1}],
+ [{h:-10,l:15,ff:[16,0],bf:[-9,0],fh:[22,-12],bh:[4,-3],hd:[7,3]},{rot:-.1}],
+ [{h:-10,l:16,ff:[17,0],bf:[-9,0],fh:[24,-4],bh:[22,-9],hd:[8,4]}]])})();
+(()=>{const m=MOVES.sh_sp;if(m)chain(21,'sh_sp',{h:-9,l:9,ff:[4,0],fh:[6,0],bh:[4,0]},[
+ [{h:-9,l:18,ff:[20,0],bf:[-7,0],fh:[26,-6],bh:[1,-2],hd:[9,4]}],
+ [{h:-9,l:19,ff:[22,0],bf:[-6,0],fh:[3,-2],bh:[26,-5],hd:[9,4]},{rot:.12}],
+ [{h:-9,l:20,ff:[23,0],bf:[-6,0],fh:[26,-10],bh:[24,-6],hd:[10,4]}]])})();
+for(const si of [1,2,3,4,5,6,7,21])AUTH.add('kick2|'+si);
 
 window.SFPOSE2_INFO={AUTH:[...AUTH]};
 })();
