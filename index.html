@@ -7618,8 +7618,21 @@ window.SFPOSE2_INFO={AUTH:[...AUTH]};
    const P2=this.build(PT),f=P2.fg;P2.fg=null;
    try{return of.apply(this,arguments)}finally{P2.fg=f}}
   return of.apply(this,arguments)};
+ /* 2) Zemin karo yerleşimi: taş sırası (V) eskiden "üstte kaç katı karo var" sayısına göre seçiliyordu; aynı yatay satır,
+    üstünde basamak olan sütunda başka, açık sütunda başka taş sırası alıyor, derzler kayıyordu. Artık iç satırlar
+    mutlak satır numarasına göre 4'lü döngüyle (16→32→48→64) seçilir: aynı satır her sütunda aynı, dikeyde kesintisiz.
+    Orta sütunlar da kenara göre değil mutlak sütuna göre seçilir (zaten öyleydi). */
+ if(typeof ts32Draw==='function'){
+  ts32Draw=function(c,r,x,y,S){const th=ROOM.ts32||TS32_ROOM[ROOMID],i=TS32_ORDER.indexOf(th);if(!TS32_IMG.ok||i<0)return false;
+   const sl=!S(c-1,r),sr=!S(c+1,r),su=!S(c,r-1),sd=!S(c,r+1);
+   const dl=sl?0:!S(c-2,r)?1:2,dr=sr?0:!S(c+2,r)?1:2;
+   let H,V;
+   if(sl&&sr)H=[[0,0,8],[24,8,8]];else if(sr)H=[[112,0,16]];else if(sl)H=[[32,0,16]];else if(dr===1)H=[[96,0,16]];else if(dl===1)H=[[48,0,16]];else H=[[64+(c&1)*16,0,16]];
+   const rr=((r+(ROY/TS|0))%4+4)%4;
+   if(su&&sd)V=[[96,0,8],[120,8,8]];else if(su)V=[[0,0,16]];else if(sd)V=[[80,0,16]];else V=[[16+rr*16,0,16]];
+   const ox=i*128;for(const h of H)for(const v of V)g.drawImage(TS32_IMG,ox+h[0],v[0],h[2],v[2],x+h[1],y+v[1],h[2],v[2]);
+   if(ROOM.reg==='bambu'&&c>=0&&r>=0&&c<ROOM.rows[0].length&&r<ROOM.rows.length)bambooSurface(c,r,x,y,S);return true}}
 })();
-
 </script>
 </body></html>
 
