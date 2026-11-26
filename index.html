@@ -7578,7 +7578,7 @@ window.SFPOSE2_INFO={AUTH:[...AUTH]};
  const ou=updEnemy;
  updEnemy=function(e){
   if(e.st==='dead'&&!e.boss){
-   e.dt++;e.vy+=.5;e.y+=e.vy;const vy0=e.vy;land(e,true);
+   e.dt++;if(e.flash>0)e.flash--;if(e.vuln>0)e.vuln--;e.vy+=.5;e.y+=e.vy;const vy0=e.vy;land(e,true);
    if(e.on){ if(vy0>5.5&&!e.cb){e.cb=1;e.on=false;e.vy=-vy0*.25;e.y-=1;e.vx*=.65;puff(e.x,e.y,1,.8)}
     else{e.cb=0;e.vx*=.86;if(Math.abs(e.vx)<.08)e.vx=0}}
    if(e.vx){const s=sg(e.vx);if(blocked(e,e.x+e.vx,s))e.vx=0;else if(e.on&&!supportAt(e.x+e.vx+s*4,e.y)){e.x+=e.vx;e.on=false}else e.x+=e.vx}
