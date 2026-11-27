@@ -7661,15 +7661,24 @@ if(window.LOC&&LOC.D){Object.assign(LOC.D,{
  'TARİKAT ELÇİSİ':'SECT ENVOY','Kara Ejderha\'nın Gölgesi':LOC.D['Kara Ejderha\'nın Gölgesi']||'Shadow of the Black Dragon',
  'Geç':'Skip','Geçmek için tekrar bas':LOC.D['Geçmek için tekrar bas']||'Press again to skip'})}
 const ENVOY={cloth:'#1c1420',dark:'#0c0910',skin:'#b89070',hair:'#0a0a0a',accent:'#d8a030'};
+// karakter tasarımları: öğrenciler Kai'nin gövdesiyle (kuşak/saç/ten çeşitli), Wen asalı usta, tarikat oyundaki düşman çizimiyle
+C.WEN={cloth:'#4a5068',dark:'#262a3a',skin:'#d0a888',hair:'#f0f0f0',accent:'#d0a050'};
+const STUV=[['#2a1c14','#c99a72','#8a6a40'],['#141018','#b88a64','#3a5a8a'],['#3a2414','#d8aa80','#5a5a62'],['#141018','#a87a58','#1a1a1e'],['#24180e','#c4946c','#7a3a30'],['#1a1414','#d0a078','#4a6a40']]
+ .map(([h,sk,a])=>({cloth:'#d8d0c0',dark:'#3c3448',skin:sk,hair:h,accent:a}));
+const ET_=k=>{const d=ET[k]||{};return{pal:PAL[d.pal]||d.pal,kit:d.kit||d.pal,enemyArt:k,weapon:d.weapon,fem:d.fem}};
+C.stu=function(i,o){return this.F(Object.assign({pal:STUV[i%STUV.length],kit:'kai',si:1+(i%3),hand:HANDS[1+(i%3)]||HANDS[0]},o))};
+C.kaiF=function(o){return this.F(Object.assign({pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0]},o))};
+C.wenF=function(o){return this.F(Object.assign({pal:this.WEN,kit:'monk',weapon:'staff'},o))};
+C.sectF=function(lead,o){return this.F(Object.assign(ET_(lead?'fast':'grunt'),o))};
 
 // ---------- sinematik araç takımı ----------
 // kamera: dünya noktası (fx,fy) ekranın ortasında, z yakınlaştırma; oda dışını göstermez
 C.frame=function(fx,fy,z){const hw=W/(2*z),hh=H/(2*z);
  const cx=LEN<=2*hw?LEN/2:clamp(fx,hw,LEN-hw),cy=(RH-ROY)<=2*hh?(ROY+RH)/2:clamp(fy,ROY+hh,RH-hh);
  cam.x=cx-W/2;cam.y=cy-H/2;this.Z=z};
-C.wbeg=function(){g.save();this.zoom(this.Z,W/2,H/2);Parallax.bg();g.save();g.translate(Math.round(-cam.x),Math.round(-cam.y));
+C.wbeg=function(){this.WL=1;try{if(window.sceneLight&&sceneLight.collect)sceneLight.collect()}catch(e){this.WL=0}g.save();this.zoom(this.Z,W/2,H/2);Parallax.bg();g.save();g.translate(Math.round(-cam.x),Math.round(-cam.y));
  BackWall.draw();drawTiles();Props.draw();drawObjs()};
-C.wend=function(light,px,py){g.restore();
+C.wend=function(light,px,py){this.WL=0;g.restore();
  if(light){const ox=P.x,oy=P.y;P.x=px!=null?px:-999;P.y=py!=null?py:-999;try{if(window.sceneLight&&sceneLight.collect)sceneLight.collect()}catch(e){}try{Atmos.draw()}catch(e){}P.x=ox;P.y=oy}
  g.restore()};
 // renk düzenlemesi: üstten alta iki renk, çarpma + yumuşak ışık
@@ -7698,7 +7707,7 @@ C.ink=function(p,dir){if(p<=0)return;if(p>=1){R(0,0,W,H,'#000');return}g.fillSty
 C.bars=function(k){const t=Math.round(30*k),b=Math.round(38*k);R(0,0,W,t,'#000');R(0,H-b,W,b,'#000')};
 C.flash=function(a,col){if(a>0)R(0,0,W,H,'rgba('+(col||'255,236,200')+','+a+')')};
 // kişi kısayolu
-C.F=function(o){this.fighter(Object.assign({kit:'grunt',pose:'idle',face:1},o))};
+C.F=function(o){this.fighter(Object.assign({kit:'grunt',pose:'idle',face:1,worldLight:!!this.WL},o))};
 C.gy=function(x){const y=floorBelow(x,150);return y<RH?y:240};
 
 // ---------- 1. Mühür (eski çizim + düzenleme) ----------
@@ -7710,10 +7719,10 @@ C.school=function(lt){this.use('school');
  const fx=330+lt*.18,z=2.5-.25*ez(lt/480);this.frame(fx,224,z);this.wbeg();
  // Usta Wen önde gösteriyor
  const beat=(lt+20)%60,strike=beat<14,ph=strike?beat/14:0;
- this.F({x:300,y:this.gy(300),face:1,pose:strike?'atk':'idle',kind:'palm',aph:ph,ak:ph,pal:this.WEN,kit:'monk',t:G.t});
+ this.wenF({x:300,y:this.gy(300),face:1,pose:strike?'atk':'idle',kind:'palm',aph:ph,ak:ph,t:G.t});
  // tek sıra öğrenci, ufak zaman kaymasıyla aynı harekete
- for(let i=0;i<6;i++){const x=356+i*29,kai=i===2,d=(i*2)%5,b2=(lt+20-d)%60,st=b2<14,p2=st?b2/14:0;
-  this.F({x,y:this.gy(x),face:-1,pose:st?'atk':'idle',kind:'punch',aph:p2,ak:p2,pal:kai?PAL.kai:this.STU,kit:kai?'kai':'grunt',si:kai?0:undefined,hand:kai?HANDS[0]:undefined,t:G.t+i*7})}
+ for(let i=0;i<6;i++){const x=352+i*32,kai=i===2,d=(i*2)%5,b2=(lt+20-d)%60,st=b2<14,p2=st?b2/14:0;
+  const o={x,y:this.gy(x),face:-1,pose:st?'atk':'idle',kind:'punch',aph:p2,ak:p2,t:G.t+i*7};if(kai)this.kaiF(o);else this.stu(i,o)}
  this.wend(false);
  this.grade('#ffe0b0','#806070',.5,'soft-light');this.rays(W*.1,-.35,7,'255,225,175',.16,lt);this.motes(22,lt,'255,230,190',{a:.4});
  this.fgGrass(lt,cam.x,'#08060c');this.vig(.45)};
@@ -7722,15 +7731,15 @@ C.school=function(lt){this.use('school');
 C.sect=function(lt){this.use('school');
  // 0-260 geniş: tarikat sağdan girer; 260-400 elçiye yaklaş; 400-540 Wen karşılık verir
  const push=ez((lt-250)/120),back=ez((lt-400)/50);
- const fx=lerp(470,512,push)-50*back,z=lerp(2.2,3.2,push)-1.0*back;this.frame(fx,lerp(222,220,push),z);this.wbeg();
- const wenX=lerp(300,420,ez((lt-380)/60));
- this.F({x:wenX,y:this.gy(wenX),face:1,pose:lt>380&&lt<440?'walk':lt>=440?'block':'idle',pal:this.WEN,kit:'monk',vx:lt>380&&lt<440?1:0});
- for(let i=0;i<6;i++){const x=320+i*22,kai=i===2,turn=lt>70+i*9;
-  this.F({x:x-(turn?4:0),y:this.gy(x),face:turn?1:-1,pose:turn&&lt>300?'block':'idle',pal:kai?PAL.kai:this.STU,kit:kai?'kai':'grunt',si:kai?0:undefined,hand:kai?HANDS[0]:undefined,t:G.t+i*7})}
+ const fx=lerp(420,512,push)-40*back,z=lerp(2.2,3.2,push)-1.0*back;this.frame(fx,lerp(222,220,push),z);this.wbeg();
+ const wenX=lerp(405,455,ez((lt-380)/60));
+ this.wenF({x:wenX,y:this.gy(wenX),face:1,pose:lt>380&&lt<440?'walk':lt>=440?'block':'idle',vx:lt>380&&lt<440?1:0});
+ for(let i=0;i<6;i++){const x=230+i*25,kai=i===4,turn=lt>70+i*9;
+  const o={x:x-(turn?4:0),y:this.gy(x),face:turn?1:-1,pose:turn&&lt>300?'block':'idle',t:G.t+i*7};if(kai)this.kaiF(o);else this.stu(i,o)}
  // elçi ve dört müridi
  for(let i=0;i<5;i++){const lead=i===0,tx=lead?520:552+i*18,x0=800+i*26,k=ezo((lt-20-i*10)/200),x=lerp(x0,tx,k),walk=k<.98;
   const bow=lead?ez((lt-230)/30)*(1-ez((lt-300)/26)):0;WPH=walk?(G.t*.07+i*.4):null;
-  this.F({x,y:this.gy(x),face:-1,pose:walk?'walk':'idle',pal:lead?ENVOY:this.SECT,kit:'grunt',vx:walk?-1:0,rot:bow*.55,s:lead?1.06:1,t:G.t+i*9})}WPH=null;
+  this.sectF(lead,{x,y:this.gy(x),face:-1,pose:walk?'walk':'idle',vx:walk?-1:0,rot:bow*.55,s:lead?1.06:1,t:G.t+i*9})}WPH=null;
  // elçinin gözleri doğrulurken kızarır
  const eye=ez((lt-300)/12)*(1-ez((lt-372)/30));if(eye>0){const ey=this.gy(520)*1.06-this.gy(520)*.06;lGlow(520-3,ey-35,5,'255,40,40',.55*eye);R(520-4,ey-36,1,1,'rgba(255,120,100,'+eye+')');R(520-2,ey-36,1,1,'rgba(255,120,100,'+eye+')')}
  this.wend(false);
@@ -7756,7 +7765,7 @@ C.bell=function(lt){this.use('o_kule');const bx=430,by=ROY+74,z=2.4-.6*ez(lt/360
 // ---------- 5. Usta Wen: yanan avlu ----------
 C.wen=function(lt){this.use('school');const z=2.7+.35*ez(lt/540),fx=450+20*ez(lt/540);this.frame(fx,218,z);this.wbeg();
  const turnK=lt>250&&lt<430,walk=lt>=470,wx=470+(walk?(lt-470)*.55:0);WPH=walk?G.t*.06:null;
- this.F({x:wx,y:this.gy(wx),face:turnK?-1:1,pose:walk?'walk':'idle',pal:this.WEN,kit:'monk',vx:walk?1:0});WPH=null;
+ this.wenF({x:wx,y:this.gy(wx),face:turnK?-1:1,pose:walk?'walk':'idle',vx:walk?1:0});WPH=null;
  // sağdan kızıl yangın ışığı
  this.wend(false);
  this.grade('#a05060','#401018',.55,'multiply');
@@ -7774,7 +7783,7 @@ C.kai=function(lt){this.use('o_giris');const kx=270,z=2.6-1.0*ez((lt-200)/320);t
  let pose='dead',kind='palm',aph=0,ak=0,face=1;if(lt>110)pose='hurt';if(lt>170)pose='crouch';if(lt>230)pose='idle';
  if(lt>250&&lt<300)face=-1;if(lt>300&&lt<340)face=1;if(lt>380){pose='atk';aph=1;ak=1}
  if(lt>380){const a=.4+.25*Math.sin(G.t*.2),k=ez((lt-380)/30);lGlow(kx+10,240-30,40*k,'255,190,90',a*k)}
- this.F({x:kx,y:240,face,pose,kind,aph,ak,pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0],sm:this.sm||(this.sm={})});
+ this.kaiF({x:kx,y:this.gy(kx),face,pose,kind,aph,ak,sm:this.sm||(this.sm={})});
  this.wend(true,kx,215);
  const dawn=ez(lt/400);this.grade('#9ab0e0','#202838',.45*(1-dawn),'soft-light');this.grade('#ffc890','#403050',.45*dawn,'soft-light');
  this.rays(W*.55,.35,5,'255,215,170',.12*dawn,lt);this.motes(20,lt,'255,230,200',{a:.4});
@@ -7818,13 +7827,13 @@ const PORT={};
 function portraitFor(who){if(!who)return null;if(PORT[who]!==undefined)return PORT[who];let o=null;const u=who.toUpperCase();
  const pal=k=>(typeof PAL!=='undefined'&&PAL[k])||null;
  if(u==='KAI')o={pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0]};
- else if(u.includes('WEN'))o={pal:C.WEN,kit:'monk'};
+ else if(u.includes('WEN'))o={pal:C.WEN,kit:'monk',weapon:'staff'};
  else if(u.includes('LING'))o={pal:pal('ling')||C.WEN,kit:'monk'};
  else if(u.includes('MO'))o={pal:pal('mo')||C.WEN,kit:'monk'};
  else if(u.includes('SU')&&u.includes('KÜTÜP'))o={pal:pal('su')||C.WEN,kit:'monk'};
  else if(u.includes('HUA'))o={pal:pal('archer')||C.STU,kit:'archer'};
  else if(u.includes('TOMAR'))o={pal:pal('monk')||C.WEN,kit:'monk'};
- else if(u.includes('ELÇİ'))o={pal:ENVOY,kit:'grunt'};
+ else if(u.includes('ELÇİ'))o=ET_('fast');
  else if(u.includes('DEMİR'))o={pal:(ET.boss&&ET.boss.pal&&(PAL[ET.boss.pal]||ET.boss.pal))||C.SECT,kit:'boss'};
  else if(u.includes('EJDERHA'))o={dragon:1};
  else{try{for(const k in ET){const d=ET[k];if(d&&d.mb&&d.n&&u.includes(String(d.n).toUpperCase().split(' ').pop()))o={pal:(typeof d.pal==='string'?PAL[d.pal]:d.pal)||C.SECT,kit:d.kit||'grunt'}}}catch(e){}}
