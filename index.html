@@ -7634,5 +7634,256 @@ window.SFPOSE2_INFO={AUTH:[...AUTH]};
    if(ROOM.reg==='bambu'&&c>=0&&r>=0&&c<ROOM.rows[0].length&&r<ROOM.rows.length)bambooSurface(c,r,x,y,S);return true}}
 })();
 </script>
+<script>
+/* ===== v3.40 Ara sahneler: sinematik açılış + sinematik diyaloglar ===== */
+(()=>{
+const C=CUT,TAU=Math.PI*2,lerp=(a,b,k)=>a+(b-a)*k;
+const ez=k=>{k=clamp(k,0,1);return k*k*(3-2*k)},ezo=k=>{k=clamp(k,0,1);return 1-Math.pow(1-k,3)};
+// kendi deterministik gürültümüz (ara sahne her oynatışta aynı görünsün)
+const hs=n=>{const s=Math.sin(n*127.1+311.7)*43758.5453;return s-Math.floor(s)};
+const FONT_S="Georgia,'Times New Roman',serif";
+// ---------- yeni zaman çizelgesi ----------
+C.SH=[[0,480,'seal'],[480,960,'school'],[960,1500,'sect'],[1500,1860,'bell'],[1860,2400,'wen'],[2400,2940,'kai'],[2940,3260,'title']];
+C.SUB=[
+ [40,460,'','Yüz yıl önce ustalar Kara Ejderha\'yı beş mühürle bağladı.'],
+ [520,940,'','Birinci mühür, Gölge Yumruk Okulu\'nun altındaydı.'],
+ [1000,1225,'','Sonra Kara Ejderha Tarikatı gülümseyerek geldi...'],
+ [1240,1372,'TARİKAT ELÇİSİ','Usta Wen. Mührü bize emanet edin. Kimse incinmesin.'],
+ [1384,1490,'USTA WEN','Bu okulda kimse diz çökmez.'],
+ [1545,1845,'','...ve bir sabah okulun çanı çalmadı.'],
+ [1910,2120,'','Usta Wen avluda tek başına bekledi.'],
+ [2140,2390,'USTA WEN','Kai... git. Yumruğunu öfkeyle değil, ruhunla kaldır.'],
+ [2480,2690,'KAI','Usta... Okul yok olmuş.'],
+ [2740,2930,'KAI','Söz, Usta. Onları bulacağım.']];
+if(window.LOC&&LOC.D){Object.assign(LOC.D,{
+ 'Usta Wen. Mührü bize emanet edin. Kimse incinmesin.':'Master Wen. Entrust the seal to us. No one needs to get hurt.',
+ 'Bu okulda kimse diz çökmez.':'No one kneels in this school.',
+ 'TARİKAT ELÇİSİ':'SECT ENVOY','Kara Ejderha\'nın Gölgesi':LOC.D['Kara Ejderha\'nın Gölgesi']||'Shadow of the Black Dragon',
+ 'Geç':'Skip','Geçmek için tekrar bas':LOC.D['Geçmek için tekrar bas']||'Press again to skip'})}
+const ENVOY={cloth:'#1c1420',dark:'#0c0910',skin:'#b89070',hair:'#0a0a0a',accent:'#d8a030'};
+
+// ---------- sinematik araç takımı ----------
+// kamera: dünya noktası (fx,fy) ekranın ortasında, z yakınlaştırma; oda dışını göstermez
+C.frame=function(fx,fy,z){const hw=W/(2*z),hh=H/(2*z);
+ const cx=LEN<=2*hw?LEN/2:clamp(fx,hw,LEN-hw),cy=(RH-ROY)<=2*hh?(ROY+RH)/2:clamp(fy,ROY+hh,RH-hh);
+ cam.x=cx-W/2;cam.y=cy-H/2;this.Z=z};
+C.wbeg=function(){g.save();this.zoom(this.Z,W/2,H/2);Parallax.bg();g.save();g.translate(Math.round(-cam.x),Math.round(-cam.y));
+ BackWall.draw();drawTiles();Props.draw();drawObjs()};
+C.wend=function(light,px,py){g.restore();
+ if(light){const ox=P.x,oy=P.y;P.x=px!=null?px:-999;P.y=py!=null?py:-999;try{if(window.sceneLight&&sceneLight.collect)sceneLight.collect()}catch(e){}try{Atmos.draw()}catch(e){}P.x=ox;P.y=oy}
+ g.restore()};
+// renk düzenlemesi: üstten alta iki renk, çarpma + yumuşak ışık
+C.grade=function(top,bot,a,mode){g.save();g.globalCompositeOperation=mode||'multiply';g.globalAlpha=a;const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,top);gr.addColorStop(1,bot);g.fillStyle=gr;g.fillRect(0,0,W,H);g.restore()};
+C.vig=function(a){const gr=g.createRadialGradient(W/2,H*.48,H*.28,W/2,H*.5,W*.62);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,'+a+')');g.fillStyle=gr;g.fillRect(0,0,W,H)};
+// ışık hüzmeleri (ekran uzayı)
+C.rays=function(x0,ang,n,col,a,t){g.save();g.globalCompositeOperation='lighter';
+ for(let i=0;i<n;i++){const x=x0+i*26+Math.sin(t*.01+i)*6,w=8+hs(i)*14,al=a*(.55+.45*Math.sin(t*.013+i*1.7));
+  const L=H*1.5,dx=Math.sin(ang)*L,dy=Math.cos(ang)*L,gr=g.createLinearGradient(x,0,x+dx,dy);
+  gr.addColorStop(0,'rgba('+col+','+al+')');gr.addColorStop(.6,'rgba('+col+','+al*.35+')');gr.addColorStop(1,'rgba('+col+',0)');
+  g.fillStyle=gr;g.beginPath();g.moveTo(x,-4);g.lineTo(x+w,-4);g.lineTo(x+w+dx,dy);g.lineTo(x+dx,dy);g.closePath();g.fill()}
+ g.restore()};
+// toz zerrecikleri / kıvılcım / yaprak (ekran uzayı, deterministik)
+C.motes=function(n,t,col,o){o=o||{};for(let i=0;i<n;i++){const sp=o.sp||.15,ph=hs(i+3)*1000;
+  let x=(hs(i)*W+t*sp*(o.dx||.4)+Math.sin(t*.01+ph)*8)%W,y=(hs(i+7)*H+(o.up?-1:1)*t*sp*(.3+hs(i+9)))%H;if(x<0)x+=W;if(y<0)y+=H;
+  const a=(o.a||.5)*(.4+.6*Math.abs(Math.sin(t*.02+ph)));R(Math.round(x),Math.round(y),o.s||1,o.s||1,'rgba('+col+','+a+')')}};
+C.embers=function(n,t,a){g.save();g.globalCompositeOperation='lighter';for(let i=0;i<n;i++){const life=200+hs(i)*160,k=((t+hs(i+1)*life)%life)/life,
+  x=hs(i+2)*W+Math.sin(k*9+i)*10+k*30,y=H+6-k*(H+20),al=a*Math.sin(k*Math.PI);R(Math.round(x),Math.round(y),1,1,'rgba(255,'+(140+(i%3)*30)+',60,'+al+')');if(i%4===0)R(Math.round(x),Math.round(y)+1,1,1,'rgba(255,90,40,'+al*.5+')')}g.restore()};
+// ön plan siluetleri: kamera hareketinden hızlı kayan koyu otlar/sütunlar (derinlik)
+C.fgGrass=function(t,off,col){const y0=H-4;g.fillStyle=col||'#06040a';for(let x=-20;x<W+20;x+=3){const xx=x-((off*1.6)%3),h=6+Math.round(hs(Math.floor((x+off*1.6)/3))*10+Math.sin(t*.03+x*.1)*1.5);g.fillRect(Math.round(xx),y0-h,2,h+4)}};
+// mürekkep geçişi: p 0..1, dir 1 = kapanır (soldan), -1 = açılır
+C.ink=function(p,dir){if(p<=0)return;if(p>=1){R(0,0,W,H,'#000');return}g.fillStyle='#000';
+ for(let y=0;y<H;y+=2){const n=Math.sin(y*.09)*9+Math.sin(y*.031+2)*14+hs(Math.floor(y/2))*7,e=p*(W+80)-40+n;
+  if(dir>0)g.fillRect(0,y,Math.max(0,e),2);else g.fillRect(Math.max(0,e),y,W,2)}
+ for(let i=0;i<14;i++){const y=hs(i)*H,e=p*(W+80)-40+Math.sin(y*.09)*9,r=1+hs(i+5)*3,dx=(hs(i+8)-.2)*26*(dir>0?1:-1);if(dir>0)C.pc(e+dx,y,Math.round(r),'#000');else C.pc(e-dx,y,Math.round(r),'#000')}};
+C.bars=function(k){const t=Math.round(30*k),b=Math.round(38*k);R(0,0,W,t,'#000');R(0,H-b,W,b,'#000')};
+C.flash=function(a,col){if(a>0)R(0,0,W,H,'rgba('+(col||'255,236,200')+','+a+')')};
+// kişi kısayolu
+C.F=function(o){this.fighter(Object.assign({kit:'grunt',pose:'idle',face:1},o))};
+C.gy=function(x){const y=floorBelow(x,150);return y<RH?y:240};
+
+// ---------- 1. Mühür (eski çizim + düzenleme) ----------
+const oSeal=C.seal;
+C.seal=function(lt){oSeal.call(this,lt);this.grade('#3a2a70','#1a0a20',.35,'soft-light');this.vig(.55);this.motes(26,lt,'200,180,255',{a:.35,sp:.1})};
+
+// ---------- 2. Okul: sabah talimi ----------
+C.school=function(lt){this.use('school');
+ const fx=330+lt*.18,z=2.5-.25*ez(lt/480);this.frame(fx,224,z);this.wbeg();
+ // Usta Wen önde gösteriyor
+ const beat=(lt+20)%60,strike=beat<14,ph=strike?beat/14:0;
+ this.F({x:300,y:this.gy(300),face:1,pose:strike?'atk':'idle',kind:'palm',aph:ph,ak:ph,pal:this.WEN,kit:'monk',t:G.t});
+ // tek sıra öğrenci, ufak zaman kaymasıyla aynı harekete
+ for(let i=0;i<6;i++){const x=356+i*29,kai=i===2,d=(i*2)%5,b2=(lt+20-d)%60,st=b2<14,p2=st?b2/14:0;
+  this.F({x,y:this.gy(x),face:-1,pose:st?'atk':'idle',kind:'punch',aph:p2,ak:p2,pal:kai?PAL.kai:this.STU,kit:kai?'kai':'grunt',si:kai?0:undefined,hand:kai?HANDS[0]:undefined,t:G.t+i*7})}
+ this.wend(false);
+ this.grade('#ffe0b0','#806070',.5,'soft-light');this.rays(W*.1,-.35,7,'255,225,175',.16,lt);this.motes(22,lt,'255,230,190',{a:.4});
+ this.fgGrass(lt,cam.x,'#08060c');this.vig(.45)};
+
+// ---------- 3. Tarikat geliyor ----------
+C.sect=function(lt){this.use('school');
+ // 0-260 geniş: tarikat sağdan girer; 260-400 elçiye yaklaş; 400-540 Wen karşılık verir
+ const push=ez((lt-250)/120),back=ez((lt-400)/50);
+ const fx=lerp(470,512,push)-50*back,z=lerp(2.2,3.2,push)-1.0*back;this.frame(fx,lerp(222,220,push),z);this.wbeg();
+ const wenX=lerp(300,420,ez((lt-380)/60));
+ this.F({x:wenX,y:this.gy(wenX),face:1,pose:lt>380&&lt<440?'walk':lt>=440?'block':'idle',pal:this.WEN,kit:'monk',vx:lt>380&&lt<440?1:0});
+ for(let i=0;i<6;i++){const x=320+i*22,kai=i===2,turn=lt>70+i*9;
+  this.F({x:x-(turn?4:0),y:this.gy(x),face:turn?1:-1,pose:turn&&lt>300?'block':'idle',pal:kai?PAL.kai:this.STU,kit:kai?'kai':'grunt',si:kai?0:undefined,hand:kai?HANDS[0]:undefined,t:G.t+i*7})}
+ // elçi ve dört müridi
+ for(let i=0;i<5;i++){const lead=i===0,tx=lead?520:552+i*18,x0=800+i*26,k=ezo((lt-20-i*10)/200),x=lerp(x0,tx,k),walk=k<.98;
+  const bow=lead?ez((lt-230)/30)*(1-ez((lt-300)/26)):0;WPH=walk?(G.t*.07+i*.4):null;
+  this.F({x,y:this.gy(x),face:-1,pose:walk?'walk':'idle',pal:lead?ENVOY:this.SECT,kit:'grunt',vx:walk?-1:0,rot:bow*.55,s:lead?1.06:1,t:G.t+i*9})}WPH=null;
+ // elçinin gözleri doğrulurken kızarır
+ const eye=ez((lt-300)/12)*(1-ez((lt-372)/30));if(eye>0){const ey=this.gy(520)*1.06-this.gy(520)*.06;lGlow(520-3,ey-35,5,'255,40,40',.55*eye);R(520-4,ey-36,1,1,'rgba(255,120,100,'+eye+')');R(520-2,ey-36,1,1,'rgba(255,120,100,'+eye+')')}
+ this.wend(false);
+ // gökyüzü soğur, kızıl kıyıya kayar
+ const cold=ez((lt-150)/250);this.grade('#ffd9a0','#3a3050',.4*(1-cold),'soft-light');this.grade('#5a6a98','#7a2830',.5*cold,'multiply');
+ this.motes(14,lt,'255,220,200',{a:.25});this.fgGrass(lt,cam.x);this.vig(.5+.2*cold);
+ if(lt>=440&&lt<446)this.flash(.25*(1-(lt-440)/6),'255,250,240')};
+
+// ---------- 4. Çan kulesi: sessizlik ----------
+C.bell=function(lt){this.use('o_kule');const bx=430,by=ROY+74,z=2.4-.6*ez(lt/360);this.frame(bx,by+30,z);this.wbeg();
+ const sw=Math.sin(lt*.035)*.06*(1-ez(lt/300)),ang=sw;
+ // kesik ip
+ R(bx-1,ROY+16,3,by-ROY-34,'#4a3018');R(bx-1,by-20,3,4,'#6a4a28');
+ g.save();g.translate(bx,by-18);g.rotate(ang);g.translate(-bx,-(by-18));
+ R(bx-1,by-18,3,12,'#4a3018');R(bx-14,by-8,28,3,'#3a2414');R(bx-14,by-8,28,1,'#6a4424');
+ const rows=[10,14,16,18,18,20,20,22,22,24,24,26,28,30,32,34,36,34];rows.forEach((w,i)=>{R(bx-w/2,by-6+i,w,1,i<2?'#8a6a30':'#a07a34');R(bx-w/2,by-6+i,2,1,'#5a4018');R(bx+w/2-3,by-6+i,3,1,'#c8a050')});
+ R(bx-16,by+5,32,2,'#6a4a1c');R(bx-18,by+9,36,1,'#c8a050');R(bx-2,by+12,4,6,'#4a3014');g.restore();
+ // düşen tek yaprak
+ const lk=(lt-80)/260;if(lk>0&&lk<1){const lx=bx+30-lk*50+Math.sin(lk*14)*10,ly=ROY+20+lk*(by-ROY+60);R(Math.round(lx),Math.round(ly),2,1,'#c86a24');R(Math.round(lx)+1,Math.round(ly)-1,1,1,'#e08a34')}
+ this.wend(true,bx,by);
+ this.grade('#c8d8ff','#202838',.5,'soft-light');this.rays(W*.05,-.55,5,'210,225,255',.16,lt);this.motes(40,lt,'220,230,255',{a:.55,sp:.06,dx:.2});this.vig(.6)};
+
+// ---------- 5. Usta Wen: yanan avlu ----------
+C.wen=function(lt){this.use('school');const z=2.7+.35*ez(lt/540),fx=450+20*ez(lt/540);this.frame(fx,218,z);this.wbeg();
+ const turnK=lt>250&&lt<430,walk=lt>=470,wx=470+(walk?(lt-470)*.55:0);WPH=walk?G.t*.06:null;
+ this.F({x:wx,y:this.gy(wx),face:turnK?-1:1,pose:walk?'walk':'idle',pal:this.WEN,kit:'monk',vx:walk?1:0});WPH=null;
+ // sağdan kızıl yangın ışığı
+ this.wend(false);
+ this.grade('#a05060','#401018',.55,'multiply');
+ lGlow(W+30,H*.55,W*.9,'255,90,40',.32+.07*Math.sin(lt*.21)+.05*Math.sin(lt*.53));lGlow(W*.62,H*.5,60,'255,120,60',.12);
+ // duman katmanları
+ for(let i=0;i<5;i++){const x=((i*140+lt*.25)%(W+200))-100,y=H*.55+Math.sin(i*2+lt*.01)*10,gr=g.createRadialGradient(x,y,4,x,y,90);gr.addColorStop(0,'rgba(30,14,20,.35)');gr.addColorStop(1,'rgba(30,14,20,0)');g.fillStyle=gr;g.fillRect(x-90,y-90,180,180)}
+ this.embers(44,lt,.9);
+ // ön planda yerde yatan Kai'nin silueti (derinlik)
+ g.save();g.translate(W*.2,H-50);g.scale(2.6,2.6);this.F({x:0,y:0,face:1,pose:'dead',pal:{cloth:'#24101a',dark:'#120810',skin:'#3a1c1c',hair:'#0c0608',accent:'#5a1818'},kit:'kai',si:0,hand:HANDS[0]});g.restore();
+ for(const l of this.leaves)R(Math.round(l.x),Math.round(l.y),2,1,l.p>3?'#c86a24':'#a8401c');
+ this.vig(.65);if(walk)this.grade('#000','#000',ez((lt-470)/70)*.5,'source-over')};
+
+// ---------- 6. Kai uyanır ----------
+C.kai=function(lt){this.use('o_giris');const kx=270,z=2.6-1.0*ez((lt-200)/320);this.frame(kx+10,226,z);this.wbeg();
+ let pose='dead',kind='palm',aph=0,ak=0,face=1;if(lt>110)pose='hurt';if(lt>170)pose='crouch';if(lt>230)pose='idle';
+ if(lt>250&&lt<300)face=-1;if(lt>300&&lt<340)face=1;if(lt>380){pose='atk';aph=1;ak=1}
+ if(lt>380){const a=.4+.25*Math.sin(G.t*.2),k=ez((lt-380)/30);lGlow(kx+10,240-30,40*k,'255,190,90',a*k)}
+ this.F({x:kx,y:240,face,pose,kind,aph,ak,pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0],sm:this.sm||(this.sm={})});
+ this.wend(true,kx,215);
+ const dawn=ez(lt/400);this.grade('#9ab0e0','#202838',.45*(1-dawn),'soft-light');this.grade('#ffc890','#403050',.45*dawn,'soft-light');
+ this.rays(W*.55,.35,5,'255,215,170',.12*dawn,lt);this.motes(20,lt,'255,230,200',{a:.4});
+ if(lt>=380&&lt<392)this.flash(.35*(1-(lt-380)/12));
+ this.fgGrass(lt,cam.x);this.vig(.5)};
+
+// ---------- 7. Başlık ----------
+C.title=function(lt){R(0,0,W,H,'#050305');
+ // kızıl fırça darbesi: soldan sağa çizilir
+ const k=ezo((lt-6)/34),cx=W/2,cy=H/2+4;
+ g.save();for(let i=0;i<46;i++){const yy=cy-17+i*.8+Math.sin(i*1.3)*1.4,x0=cx-W*.36+hs(i)*12,len=(W*.72-hs(i+2)*40)*k,th=1+hs(i+4)*1.4;
+  g.globalAlpha=.08+hs(i+6)*.12;g.fillStyle=i%5===0?'#5a0c0c':'#9a1a14';g.fillRect(Math.round(x0),Math.round(yy),Math.round(len),Math.ceil(th))}
+ // fırça uçları
+ for(let i=0;i<20;i++){const x=cx-W*.36+(W*.72)*k-hs(i)*14,y=cy-14+hs(i+9)*30;g.globalAlpha=.25*k*(k<1?1:.6);R(Math.round(x),Math.round(y),1+Math.round(hs(i+3)*2),1,'#b02018')}
+ g.restore();
+ const a=ez((lt-24)/20),ou=1-ez((lt-280)/36);
+ g.save();g.globalAlpha=a*ou;g.textAlign='center';g.textBaseline='middle';
+ g.font='bold 34px '+FONT_S;g.fillStyle='#000';g.fillText('SHADOW FIST',cx+1,cy+1);g.fillStyle='#f2e6c8';g.fillText('SHADOW FIST',cx,cy);
+ // mühür damgası
+ const sx=cx+132,sy=cy-24,sa=ez((lt-48)/6);if(sa>0){g.globalAlpha=sa*ou;g.save();g.translate(sx,sy);g.rotate(-.06);const s=1+(1-sa)*.6;g.scale(s,s);R(-11,-11,22,22,'#b3241c');R(-9,-9,18,18,'#c8382a');g.font='bold 9px serif';g.fillStyle='#f6e8d0';g.fillText('影',0,-4);g.fillText('拳',0,5);g.restore()}
+ g.globalAlpha=ez((lt-70)/30)*ou;g.font='italic 10px '+FONT_S;g.fillStyle='#c8a870';g.fillText(window.LOC?LOC.tr('Kara Ejderha\'nın Gölgesi'):'Kara Ejderha\'nın Gölgesi',cx,cy+28);
+ g.restore();
+ this.embers(30,lt,.7*a*ou);
+ if(lt>=48&&lt<56)this.flash(.18*(1-(lt-48)/8),'255,200,170')};
+
+// ---------- güncelleme: ses zamanlaması ----------
+C.update=function(){this.t++;if(this.skipT>0)this.skipT--;
+ if(pressed.ok||pressed.jump||pressed.back||pressed.pause||pressed.light||pressed.use)this.press();
+ const t=this.t,sh=this.shot();
+ const S1={150:'roar',330:'boom',490:'bell',1290:'tele',1440:'block',1560:'veil',2010:'clang',2160:'veil',2380:'door',2610:'heal',2785:'style',2960:'boom',2990:'heavy'};
+ if(S1[t])Snd.sfx(S1[t]);
+ if(sh&&sh[2]==='school'){const lt=t-480;if(lt>20&&(lt+20)%60===1)Snd.sfx('punch')}
+ if(G.shake>0)G.shake=G.shake>.3?G.shake*.9:0;
+ if(t===150)G.shake=7;if(t===330)G.shake=5;if(t===2785)G.shake=3;if(t===2960)G.shake=4;
+ if(sh&&sh[2]==='wen'){if(this.leaves.length<26&&t%5===0)this.leaves.push({x:W+10,y:40+Math.random()*200,v:1+Math.random()*1.6,p:Math.random()*6});
+  for(const l of this.leaves){l.x-=l.v;l.y+=Math.sin(t*.08+l.p)*.5+.25}this.leaves=this.leaves.filter(l=>l.x>-20)}
+ if(t>=this.SH[this.SH.length-1][1])this.end()};
+
+// ---------- portre ----------
+const PORT={};
+function portraitFor(who){if(!who)return null;if(PORT[who]!==undefined)return PORT[who];let o=null;const u=who.toUpperCase();
+ const pal=k=>(typeof PAL!=='undefined'&&PAL[k])||null;
+ if(u==='KAI')o={pal:PAL.kai,kit:'kai',si:0,hand:HANDS[0]};
+ else if(u.includes('WEN'))o={pal:C.WEN,kit:'monk'};
+ else if(u.includes('LING'))o={pal:pal('ling')||C.WEN,kit:'monk'};
+ else if(u.includes('MO'))o={pal:pal('mo')||C.WEN,kit:'monk'};
+ else if(u.includes('SU')&&u.includes('KÜTÜP'))o={pal:pal('su')||C.WEN,kit:'monk'};
+ else if(u.includes('HUA'))o={pal:pal('archer')||C.STU,kit:'archer'};
+ else if(u.includes('TOMAR'))o={pal:pal('monk')||C.WEN,kit:'monk'};
+ else if(u.includes('ELÇİ'))o={pal:ENVOY,kit:'grunt'};
+ else if(u.includes('DEMİR'))o={pal:(ET.boss&&ET.boss.pal&&(PAL[ET.boss.pal]||ET.boss.pal))||C.SECT,kit:'boss'};
+ else if(u.includes('EJDERHA'))o={dragon:1};
+ else{try{for(const k in ET){const d=ET[k];if(d&&d.mb&&d.n&&u.includes(String(d.n).toUpperCase().split(' ').pop()))o={pal:(typeof d.pal==='string'?PAL[d.pal]:d.pal)||C.SECT,kit:d.kit||'grunt'}}}catch(e){}}
+ PORT[who]=o;return o}
+C.portrait=function(who,x,y,sz){const o=portraitFor(who);if(!o)return false;R(x-1,y-1,sz+2,sz+2,'#7a5a2a');R(x,y,sz,sz,'#120c16');
+ g.save();g.beginPath();g.rect(x,y,sz,sz);g.clip();
+ const gr=g.createRadialGradient(x+sz/2,y+sz*.4,2,x+sz/2,y+sz/2,sz);gr.addColorStop(0,'rgba(120,90,60,.5)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x,y,sz,sz);
+ if(o.dragon){const D=DRAGON_IMG;if(D.complete&&D.naturalWidth)g.drawImage(D,0,20,80,80,x-4,y-2,sz+10,sz+10)}
+ else{const sc=sz/22;g.save();g.translate(x+sz/2+1,y+sz*.42+33*sc);g.scale(sc,sc);drawFighter({x:0,y:0,gy:0,face:1,pose:'idle',flash:0,s:1,t:G.t,...o});g.restore()}
+ g.restore();return true};
+
+// ---------- sinematik altyazı ----------
+C.subs=function(){for(const q of this.SUB){if(this.t<q[0]||this.t>=q[1])continue;const txt=window.LOC?LOC.tr(q[3]):q[3],k=this.t-q[0],
+  a=Math.min(1,k/12,(q[1]-this.t)/14);g.save();g.globalAlpha=a;g.textBaseline='middle';
+  if(q[2]){const who=window.LOC?LOC.tr(q[2]):q[2],hasP=this.portrait(q[2],W/2-170,H-35,30),tx=hasP?W/2-132:W/2;
+   g.textAlign=hasP?'left':'center';g.font='bold 8px monospace';g.fillStyle=q[2]==='KAI'?'#8cc8ff':q[2].includes('ELÇİ')?'#e06050':'#e8b860';g.fillText(who,tx,H-30);
+   const n=Math.min(txt.length,Math.floor(k*1.1));g.font='12px '+FONT_S;g.fillStyle='#f0e6d0';g.fillText(txt.slice(0,n),tx,H-16)}
+  else{g.textAlign='center';g.font='italic 13px '+FONT_S;const w=g.measureText(txt).width;g.fillStyle='#000';g.fillText(txt,W/2+1,H-19+1);g.fillStyle='#efe2c4';g.fillText(txt,W/2,H-19);
+   const lw=Math.min(40,24+k*.5);g.fillStyle='rgba(200,160,100,'+a*.7+')';R(Math.round(W/2-w/2-lw-6),H-19,Math.round(lw),1,'rgba(200,160,100,.7)');R(Math.round(W/2+w/2+6),H-19,Math.round(lw),1,'rgba(200,160,100,.7)')}
+  g.restore()}};
+
+// ---------- çizim ----------
+C.draw=function(){const s=this.shot();if(!s){R(0,0,W,H,'#000');return}const lt=this.t-s[0],len=s[1]-s[0];
+ const shk=G.shake||0;g.save();if(shk>.3)g.translate((hs(G.t)-.5)*shk,(hs(G.t+9)-.5)*shk);this[s[2]](lt);g.restore();
+ // geçişler: ilk plan kararmadan açılır, diğerleri mürekkeple
+ const D=26;if(this.t<30)R(0,0,W,H,'rgba(0,0,0,'+(1-this.t/30)+')');
+ else if(lt<D)this.ink(1-ezo(lt/D),-1);
+ if(len-lt<D&&s[2]!=='title')this.ink(ez(1-(len-lt)/D),1);
+ if(s[2]==='title'&&len-lt<30)R(0,0,W,H,'rgba(0,0,0,'+(1-(len-lt)/30)+')');
+ this.bars(s[2]==='title'?1:ez(this.t/40));
+ this.subs();
+ if(this.skipT>0)T('Geçmek için tekrar bas',W-8,10,'#c8b890',7,'right');else if(this.t>40)T('GEÇ ▸',W-8,10,'#6a6050',7,'right')};
+
+// ---------- sinematik diyaloglar (oyun içi hikâye anları) ----------
+const DL={k:0,last:null};
+const oDD=drawDialog;
+drawDialog=function(){const d=G.dlg;if(!d||G.mode==='train'){return oDD()}
+ const k=ez(DL.k);
+ // sahneyi karart, sinema bantları
+ const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(0,0,0,'+.35*k+')');gr.addColorStop(.5,'rgba(0,0,0,'+.05*k+')');gr.addColorStop(1,'rgba(0,0,0,'+.55*k+')');g.fillStyle=gr;g.fillRect(0,0,W,H);
+ const bt=Math.round(22*k),bb=Math.round(70*k);R(0,0,W,bt,'#000');R(0,H-bb,W,bb,'#000');R(0,H-bb,W,1,'rgba(160,120,60,'+.5*k+')');
+ const [who,txt]=d.lines[d.i],nar=!who||who==='NARRATÖR'||who==='YAZIT'||who==='FİNAL';
+ const tl=String(txt),n=Math.floor(d.ch);
+ g.save();g.globalAlpha=k;g.textBaseline='top';
+ if(nar){g.textAlign='center';g.font='italic 9px '+FONT_S;const lines=wrap(tl.slice(0,n),70);const y0=H-bb+12+(3-Math.min(3,lines.length))*5;
+  if(who&&who!=='NARRATÖR'){g.font='bold 7px monospace';g.fillStyle='#c8a060';g.fillText(window.LOC?LOC.tr(who):who,W/2,H-bb+4)}
+  g.font='italic 9px '+FONT_S;lines.forEach((l,i)=>{g.fillStyle='#000';g.fillText(l,W/2+1,y0+i*12+1);g.fillStyle='#efe2c4';g.fillText(l,W/2,y0+i*12)})}
+ else{const hasP=C.portrait(who,18,H-bb+10,44),tx=hasP?72:22;
+  g.textAlign='left';g.font='bold 8px monospace';g.fillStyle=who==='KAI'?'#8cc8ff':who.startsWith('DEMİR')?'#ff7a6a':'#e8c070';g.fillText(window.LOC?LOC.tr(who):who,tx,H-bb+9);
+  R(tx,H-bb+20,Math.min(120,(window.LOC?LOC.tr(who):who).length*5+10),1,'rgba(200,150,80,.5)');
+  g.font='9px '+FONT_S;wrap(tl.slice(0,n),Math.floor((W-tx-20)/4.6)).forEach((l,i)=>{g.fillStyle='#000';g.fillText(l,tx+1,H-bb+25+i*11+1);g.fillStyle='#f0e6d0';g.fillText(l,tx,H-bb+25+i*11)})}
+ if(d.ch>=tl.length&&G.t%50<30){g.font='bold 8px monospace';g.textAlign='right';g.fillStyle='#e8c070';g.fillText('▼',W-14,H-14)}
+ g.restore()};
+// diyalog sırasında arayüz solar
+const oHud=hud;hud=function(){if(G.scene==='dialog'&&G.mode!=='train'&&DL.k>0){if(DL.k>=1)return;g.save();g.globalAlpha=1-ez(DL.k);try{oHud.apply(this,arguments)}finally{g.restore()}return}return oHud.apply(this,arguments)};
+// diyalog bitince geçiş sayacını sıfırla
+const oStep2=step;step=function(){if(G.scene!=='dialog')DL.k=0;else DL.k=Math.min(1,DL.k+.08);return oStep2.apply(this,arguments)};
+})();
+
+</script>
 </body></html>
 
