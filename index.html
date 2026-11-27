@@ -7695,6 +7695,11 @@ C.rays=function(x0,ang,n,col,a,t){g.save();g.globalCompositeOperation='lighter';
 C.motes=function(n,t,col,o){o=o||{};for(let i=0;i<n;i++){const sp=o.sp||.15,ph=hs(i+3)*1000;
   let x=(hs(i)*W+t*sp*(o.dx||.4)+Math.sin(t*.01+ph)*8)%W,y=(hs(i+7)*H+(o.up?-1:1)*t*sp*(.3+hs(i+9)))%H;if(x<0)x+=W;if(y<0)y+=H;
   const a=(o.a||.5)*(.4+.6*Math.abs(Math.sin(t*.02+ph)));R(Math.round(x),Math.round(y),o.s||1,o.s||1,'rgba('+col+','+a+')')}};
+C.flames=function(x0,x1,yb,t,h){g.save();g.globalCompositeOperation='lighter';
+ for(let x=Math.round(x0);x<x1;x+=2){const k=(x-x0)/(x1-x0),ed=Math.min(1,k*3.5),w1=Math.sin(x*.21+t*.17)*Math.sin(x*.07-t*.11+2),w2=Math.sin(x*.5+t*.4),
+  hh=Math.max(2,Math.round(h*ed*(.4+.6*k)*(.6+.4*w1+.25*w2))),h2=Math.round(hh*.62),h3=Math.round(hh*.3);
+  R(x,yb-hh,2,hh+6,'rgba(140,26,8,'+(.5*ed)+')');R(x,yb-h2,2,h2+6,'rgba(255,100,24,'+(.55*ed)+')');R(x,yb-h3,2,h3+4,'rgba(255,190,80,'+(.45*ed)+')')}
+ lGlow(x0+(x1-x0)*.7,yb-10,90,'255,110,40',.18);g.restore()};
 C.embers=function(n,t,a){g.save();g.globalCompositeOperation='lighter';for(let i=0;i<n;i++){const life=200+hs(i)*160,k=((t+hs(i+1)*life)%life)/life,
   x=hs(i+2)*W+Math.sin(k*9+i)*10+k*30,y=H+6-k*(H+20),al=a*Math.sin(k*Math.PI);R(Math.round(x),Math.round(y),1,1,'rgba(255,'+(140+(i%3)*30)+',60,'+al+')');if(i%4===0)R(Math.round(x),Math.round(y)+1,1,1,'rgba(255,90,40,'+al*.5+')')}g.restore()};
 // ön plan siluetleri: kamera hareketinden hızlı kayan koyu otlar/sütunlar (derinlik)
@@ -7712,19 +7717,19 @@ C.gy=function(x){const y=floorBelow(x,150);return y<RH?y:240};
 
 // ---------- 1. Mühür (eski çizim + düzenleme) ----------
 const oSeal=C.seal;
-C.seal=function(lt){oSeal.call(this,lt);this.grade('#3a2a70','#1a0a20',.35,'soft-light');this.vig(.55);this.motes(26,lt,'200,180,255',{a:.35,sp:.1})};
+C.seal=function(lt){const zk=1+.2*ez(lt/480),cx=W*.42,cy=H*.62;g.save();g.translate(cx,cy);g.scale(zk,zk);g.translate(-cx,-cy);oSeal.call(this,lt);g.restore();this.grade('#3a2a70','#1a0a20',.35,'soft-light');this.vig(.55);this.motes(26,lt,'200,180,255',{a:.35,sp:.1})};
 
 // ---------- 2. Okul: sabah talimi ----------
 C.school=function(lt){this.use('school');
- const fx=330+lt*.18,z=2.5-.25*ez(lt/480);this.frame(fx,224,z);this.wbeg();
+ const fx=412+lt*.045,z=2.2-.1*ez(lt/480);this.frame(fx,224,z);this.wbeg();
  // Usta Wen önde gösteriyor
  const beat=(lt+20)%60,strike=beat<14,ph=strike?beat/14:0;
- this.wenF({x:300,y:this.gy(300),face:1,pose:strike?'atk':'idle',kind:'palm',aph:ph,ak:ph,t:G.t});
+ this.wenF({x:312,y:this.gy(312),face:1,pose:strike?'atk':'idle',kind:'palm',aph:ph,ak:ph,t:G.t});
  // tek sıra öğrenci, ufak zaman kaymasıyla aynı harekete
- for(let i=0;i<6;i++){const x=352+i*32,kai=i===2,d=(i*2)%5,b2=(lt+20-d)%60,st=b2<14,p2=st?b2/14:0;
+ for(let i=0;i<6;i++){const x=356+i*34,kai=i===2,d=(i*2)%5,b2=(lt+20-d)%60,st=b2<14,p2=st?b2/14:0;
   const o={x,y:this.gy(x),face:-1,pose:st?'atk':'idle',kind:'punch',aph:p2,ak:p2,t:G.t+i*7};if(kai)this.kaiF(o);else this.stu(i,o)}
  this.wend(false);
- this.grade('#ffe0b0','#806070',.5,'soft-light');this.rays(W*.1,-.35,7,'255,225,175',.16,lt);this.motes(22,lt,'255,230,190',{a:.4});
+ this.grade('#ffd090','#a07088',.7,'soft-light');lGlow(-10,H*.18,W*.85,'255,200,120',.34);lGlow(W*.15,H*.1,70,'255,235,180',.2);this.rays(W*.02,-.4,8,'255,225,170',.2,lt);this.motes(30,lt,'255,230,190',{a:.45});
  this.fgGrass(lt,cam.x,'#08060c');this.vig(.45)};
 
 // ---------- 3. Tarikat geliyor ----------
@@ -7759,6 +7764,12 @@ C.bell=function(lt){this.use('o_kule');const bx=430,by=ROY+74,z=2.4-.6*ez(lt/360
  R(bx-16,by+5,32,2,'#6a4a1c');R(bx-18,by+9,36,1,'#c8a050');R(bx-2,by+12,4,6,'#4a3014');g.restore();
  // düşen tek yaprak
  const lk=(lt-80)/260;if(lk>0&&lk<1){const lx=bx+30-lk*50+Math.sin(lk*14)*10,ly=ROY+20+lk*(by-ROY+60);R(Math.round(lx),Math.round(ly),2,1,'#c86a24');R(Math.round(lx)+1,Math.round(ly)-1,1,1,'#e08a34')}
+ // çan ipi: lt 110'da kılıç izi ile kesilir, alt parça düşer
+ {const rx=bx+24,r0=by-2,cut=lt>=110,len=cut?30:62,sway=Math.sin(lt*.05)*(cut?2.2:.8);
+  for(let k=0;k<len;k+=2)R(Math.round(rx+sway*k/60),r0+k,2,2,k%4?'#6a4424':'#8a6434');
+  if(cut){const f=Math.min(1,(lt-110)/60),fy=r0+30+f*f*70;if(f<1)for(let k=0;k<30;k+=2)R(Math.round(rx+3+f*8+Math.sin(k*.5)*f*3),Math.round(fy+k*.4),2,2,'#6a4424');
+   // kılıç izi
+   const sl=(lt-104)/10;if(sl>0&&sl<1){g.save();g.globalCompositeOperation='lighter';g.strokeStyle='rgba(255,255,255,'+(1-sl)+')';g.lineWidth=1.5;g.beginPath();g.moveTo(rx-26+sl*14,r0+8);g.lineTo(rx+26,r0+44);g.stroke();g.restore()}}}
  this.wend(true,bx,by);
  this.grade('#c8d8ff','#202838',.5,'soft-light');this.rays(W*.05,-.55,5,'210,225,255',.16,lt);this.motes(40,lt,'220,230,255',{a:.55,sp:.06,dx:.2});this.vig(.6)};
 
@@ -7772,7 +7783,12 @@ C.wen=function(lt){this.use('school');const z=2.7+.35*ez(lt/540),fx=450+20*ez(lt
  lGlow(W+30,H*.55,W*.9,'255,90,40',.32+.07*Math.sin(lt*.21)+.05*Math.sin(lt*.53));lGlow(W*.62,H*.5,60,'255,120,60',.12);
  // duman katmanları
  for(let i=0;i<5;i++){const x=((i*140+lt*.25)%(W+200))-100,y=H*.55+Math.sin(i*2+lt*.01)*10,gr=g.createRadialGradient(x,y,4,x,y,90);gr.addColorStop(0,'rgba(30,14,20,.35)');gr.addColorStop(1,'rgba(30,14,20,0)');g.fillStyle=gr;g.fillRect(x-90,y-90,180,180)}
- this.embers(44,lt,.9);
+ // alevler (ekran uzayı, sağ taraf) + ateşin içinde Tarikat siluetleri
+ this.flames(W*.55,W+10,H*.80,lt,34+14*ez(lt/540));
+ {const sk=ez((lt-250)/200);if(sk>0)for(let i=0;i<4;i++){const sx=W*.72+i*30,sy=H*.80+(i%2)*4,hh=58+(i%2)*6;g.save();g.globalAlpha=.9*sk;
+  R(Math.round(sx),Math.round(sy-hh+10),14,hh-10,'#0a0408');R(Math.round(sx)-4,Math.round(sy-hh+12),22,16,'#0a0408');R(Math.round(sx)+3,Math.round(sy-hh-2),8,12,'#0a0408');R(Math.round(sx)+14,Math.round(sy-hh+14),3,34,'#0a0408');
+  if(((lt+i*30)%240)<225){R(Math.round(sx)+4,Math.round(sy-hh+2),2,2,'#ff3020');R(Math.round(sx)+8,Math.round(sy-hh+2),2,2,'#ff3020')}g.restore()}}
+ this.embers(60,lt,.95);
  // ön planda yerde yatan Kai'nin silueti (derinlik)
  g.save();g.translate(W*.2,H-50);g.scale(2.6,2.6);this.F({x:0,y:0,face:1,pose:'dead',pal:{cloth:'#24101a',dark:'#120810',skin:'#3a1c1c',hair:'#0c0608',accent:'#5a1818'},kit:'kai',si:0,hand:HANDS[0]});g.restore();
  for(const l of this.leaves)R(Math.round(l.x),Math.round(l.y),2,1,l.p>3?'#c86a24':'#a8401c');
