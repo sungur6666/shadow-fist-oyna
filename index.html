@@ -5984,7 +5984,7 @@ function ending(){const k=K();
   if(cruel>=6&&mercy===0)return'hakim';
   if(mercy>=1||cruel<6)return'yeni';return'hakim'}
  return k.absorbed_ki_count===0?'isik':'denge'}
-function epilogue(){const k=K(),e=ending();k.ending=e;save();const E=ENDS[e];say(E[1].concat([['FİNAL',E[0]]]),()=>{G.scene='win';save()})}
+function epilogue(){const k=K(),e=ending();k.ending=e;save();const E=ENDS[e];say(E[1].concat([['FİNAL',E[0]]]),()=>{save();if(typeof CUT!=='undefined'&&CUT.begin)CUT.begin('end1');else{G.scene='win'}})}
 function endTitle(){const k=G.kp;if(k&&k.final&&FINAL[k.final])return FINAL[k.final][0];return k&&k.ending&&ENDS[k.ending]?ENDS[k.ending][0]:''}
 
 /* ---------- Gölge Mabedi: son seçim (Kara Ejderha ile yüzleşme) ---------- */
@@ -7907,6 +7907,213 @@ drawDialog=function(){const d=G.dlg;if(!d||G.mode==='train'){return oDD()}
 const oHud=hud;hud=function(){if(G.scene==='dialog'&&G.mode!=='train'&&DL.k>0){if(DL.k>=1)return;g.save();g.globalAlpha=1-ez(DL.k);try{oHud.apply(this,arguments)}finally{g.restore()}return}return oHud.apply(this,arguments)};
 // diyalog bitince geçiş sayacını sıfırla
 const oStep2=step;step=function(){if(G.scene!=='dialog')DL.k=0;else DL.k=Math.min(1,DL.k+.08);return oStep2.apply(this,arguments)};
+})();
+
+</script>
+<script>
+/* ===== v3.43 Bölüm 1 sonu: Demir Yumruk yenildikten sonra sonraki bölüme geçiş ara sahnesi ===== */
+(()=>{
+const C=CUT,TAU=Math.PI*2;
+const clampf=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ez=k=>{k=clampf(k,0,1);return k*k*(3-2*k)},ezo=k=>{k=clampf(k,0,1);return 1-Math.pow(1-k,3)};
+const hs=n=>{const s=Math.sin(n*127.1+311.7)*43758.5453;return s-Math.floor(s)};
+const FONT_S="Georgia,'Times New Roman',serif";
+const TR=s=>window.LOC?LOC.tr(s):s;
+if(window.LOC&&LOC.D)Object.assign(LOC.D,{
+ 'Demir Yumruk yenildi. Arenanın zemini çatladı.':'Iron Fist has fallen. The arena floor cracked open.',
+ 'Birinci mühür kırıldı.':'The first seal is broken.',
+ 'Ki, soğuk bir ateş gibi damarlarına yerleşti.':'The Ki settled in his veins like a cold fire.',
+ 'Bunun bir bedeli olacak.':'This will have a price.',
+ 'Ki, kırık tavandan gökyüzüne yükseldi.':'The Ki rose through the broken roof to the sky.',
+ 'Yol hâlâ açık.':'The path is still open.',
+ 'Demir Yumruk\'un kemerinde buruşuk bir harita vardı.':'Folded in Iron Fist\'s belt was a crumpled map.',
+ 'Gerçek güç, kendine hâkim olmaktır.':'True strength is mastering oneself.',
+ 'Çok uzaklarda, Kara Ejderha gözünü araladı.':'Far away, the Black Dragon opened an eye.',
+ 'Dört mühür kaldı.':'Four seals remain.',
+ 'Dayan Usta. Geliyorum.':'Hold on, Master. I am coming.',
+ 'Yolculuk doğuya, bambuların gölgesine uzanıyordu.':'The road led east, into the shadow of the bamboo.',
+ 'BÖLÜM 1 TAMAMLANDI':'CHAPTER 1 COMPLETE','BÖLÜM 2':'CHAPTER 2','BAMBU GÖLGE ORMANI':'BAMBOO SHADOW FOREST','Wen\'i bul.':'Find Wen.',
+ 'DEMİR YUMRUK ARENASI':'IRON FIST ARENA','KIRIK MÜHÜR':'BROKEN SEAL','USTA WEN':LOC.D['USTA WEN']||'MASTER WEN'});
+// ---------- zaman çizelgesi ----------
+C.SH_I=C.SH_I||C.SH.slice();C.SUB_I=C.SUB_I||C.SUB.slice();
+C.SH_E=[[0,480,'e_ruin'],[480,1000,'e_ki'],[1000,1560,'e_map'],[1560,2000,'e_eye'],[2000,2560,'e_gate'],[2560,2900,'title']];
+C.subE=function(abs){return[
+ [50,300,'','Demir Yumruk yenildi. Arenanın zemini çatladı.'],
+ [345,470,'','Birinci mühür kırıldı.'],
+ abs?[520,780,'','Ki, soğuk bir ateş gibi damarlarına yerleşti.']:[520,780,'','Ki, kırık tavandan gökyüzüne yükseldi.'],
+ abs?[800,980,'KAI','Bunun bir bedeli olacak.']:[800,980,'KAI','Yol hâlâ açık.'],
+ [1040,1270,'','Demir Yumruk\'un kemerinde buruşuk bir harita vardı.'],
+ [1300,1540,'USTA WEN','Gerçek güç, kendine hâkim olmaktır.'],
+ [1600,1800,'','Çok uzaklarda, Kara Ejderha gözünü araladı.'],
+ [1830,1985,'','Dört mühür kaldı.'],
+ [2050,2290,'KAI','Dayan Usta. Geliyorum.'],
+ [2320,2545,'','Yolculuk doğuya, bambuların gölgesine uzanıyordu.']]};
+C.mode=null;
+const oStart=C.start,oEnd=C.end,oUpd=C.update,oTitle=C.title;
+C.begin=function(mode){this.mode=mode;this.start()};
+C.start=function(){const e=this.mode==='end1';
+ this.abs=!!(typeof G!=='undefined'&&G.kp&&G.kp.first_boss_ki_absorbed);
+ this.SH=e?this.SH_E:this.SH_I;this.SUB=e?this.subE(this.abs):this.SUB_I;
+ return oStart.apply(this,arguments)};
+C.end=function(){if(this.mode==='end1'){this.on=false;this.mode=null;this.SH=this.SH_I;this.SUB=this.SUB_I;G.dlg=null;G.scene='win';try{save()}catch(e){}
+  try{Snd.music('menu')}catch(e){}return}
+ return oEnd.apply(this,arguments)};
+C.title=function(lt){return this.mode==='end1'?this.e_title(lt):oTitle.call(this,lt)};
+// ---------- ses ve titreşim ----------
+const E1={20:'veil',300:'boom',306:'heavy',560:'ABS',1040:'tele',1300:'veil',1700:'roar',1990:'tele',2000:'door',2560:'boom'};
+C.update=function(){if(this.mode!=='end1')return oUpd.apply(this,arguments);
+ this.t++;if(this.skipT>0)this.skipT--;
+ if(pressed.ok||pressed.jump||pressed.back||pressed.pause||pressed.light||pressed.use)this.press();
+ const t=this.t,c=E1[t];if(c)Snd.sfx(c==='ABS'?(this.abs?'style':'heal'):c);
+ if(G.shake>0)G.shake=G.shake>.3?G.shake*.9:0;
+ if(t===300)G.shake=10;if(t===1700)G.shake=4;if(t===2560)G.shake=3;
+ if(t>=this.SH[this.SH.length-1][1])this.end()};
+// ---------- yardımcılar ----------
+const BOSS_PAL=()=>Object.assign({},(typeof ET_==='function'?ET_('boss'):null)||{});
+function bossArt(o){const d=ET.boss||{};return Object.assign({pal:PAL[d.pal]||d.pal,kit:d.kit||'boss',enemyArt:'boss',s:d.s||1.5},o)}
+// ---------- 1. Arena: mühür kırılır ----------
+C.e_ruin=function(lt){this.use('boss');const z=2.0+.3*ez(lt/480);this.frame(572,212,z);this.wbeg();
+ const cx=576,fy=240,k=ez(lt/280),sh=lt>=300;
+ // zemindeki mühür halkası
+ g.save();g.globalCompositeOperation='lighter';
+ const ra=.35+.2*Math.sin(lt*.09)+(sh?0:.1*k);
+ g.strokeStyle='rgba(160,90,255,'+(sh?Math.max(0,.6-(lt-300)/80):ra)+')';g.lineWidth=2;g.beginPath();g.ellipse(cx,fy+1,92,11,0,0,TAU);g.stroke();
+ g.lineWidth=1;g.beginPath();g.ellipse(cx,fy+1,66,8,0,0,TAU);g.stroke();
+ for(let i=0;i<8;i++){const a=i/8*TAU+lt*.004;g.fillStyle='rgba(190,130,255,'+(sh?0:.5)+')';g.fillRect(Math.round(cx+Math.cos(a)*79),Math.round(fy+1+Math.sin(a)*9.5),2,1)}
+ g.restore();
+ // çatlaklar: merkezden dışarı büyür
+ g.save();g.lineCap='square';
+ for(let i=0;i<11;i++){const a=i/11*TAU+hs(i)*.4,L=(46+hs(i+3)*64)*k;g.strokeStyle=sh?'rgba(255,236,200,'+Math.max(.35,.95-(lt-300)/260)+')':'rgba(255,200,140,'+(.2+.5*k)+')';g.lineWidth=.8;g.beginPath();
+  let x=cx,y=fy+1;g.moveTo(x,y);for(let j=1;j<=7;j++){const kk=j/7;x=cx+Math.cos(a)*L*kk+(hs(i*9+j)-.5)*7;y=fy+1+Math.sin(a)*L*kk*.14+(hs(i*7+j)-.5)*1.4;g.lineTo(Math.round(x),Math.round(y))}g.stroke()}
+ g.restore();
+ // yıkımdan sonra çatlaklardan yükselen ışık sütunları + moloz
+ if(sh){const u=lt-300;g.save();g.globalCompositeOperation='lighter';
+  for(let i=0;i<9;i++){const x=cx+(hs(i+20)-.5)*170,hh=(70+hs(i+30)*110)*Math.min(1,u/20),a=Math.max(0,.5-u/260);if(a<=0)continue;
+   const gr=g.createLinearGradient(0,fy,0,fy-hh);gr.addColorStop(0,'rgba(255,225,170,'+a+')');gr.addColorStop(1,'rgba(255,225,170,0)');g.fillStyle=gr;g.fillRect(Math.round(x)-2,fy-hh,4+Math.round(hs(i)*4),hh)}
+  g.restore();
+  for(let i=0;i<34;i++){const vx=(hs(i+40)-.5)*2.2,vy=2.5+hs(i+50)*4,x=cx+(hs(i+60)-.5)*120+vx*u*.5,y=fy-vy*u*.5+.045*u*u*.5;if(y>fy+2)continue;R(Math.round(x),Math.round(y),1+(i%3===0?1:0),1,'#8a7a68')}}
+ // Demir Yumruk yerde, Kai nefes nefese
+ const bx=624;this.F(bossArt({x:bx,y:this.gy(bx),face:-1,pose:'dead',t:G.t}));
+ const br=Math.sin(lt*.05)*.5;this.kaiF({x:508,y:this.gy(508),face:1,pose:'idle',t:G.t+br*10});
+ this.wend(false);
+ this.grade('#7a80b8','#281830',.55,'multiply');this.rays(W*.55,.12,5,'255,210,160',sh?.2:.06,lt);
+ this.motes(34,lt,'230,215,200',{a:.45,sp:.07,dx:.15});this.vig(.55);
+ if(lt>=300&&lt<318)this.flash(.7*(1-(lt-300)/18),'255,236,210')};
+// ---------- 2. Ki: özümseme veya serbest bırakma ----------
+C.e_ki=function(lt){this.use('boss');const z=2.55;this.frame(566,206,z);this.wbeg();
+ const bx=624,kx=508,gyb=this.gy(bx),abs=this.abs;
+ this.F(bossArt({x:bx,y:gyb,face:-1,pose:'dead',t:G.t}));
+ this.kaiF({x:kx,y:this.gy(kx),face:1,pose:'idle',t:G.t});
+ // Ki akışı (dünya uzayı)
+ const sx=bx-8,sy=gyb-18;
+ g.save();g.globalCompositeOperation='lighter';
+ if(abs){const ex=kx+6,ey=gyb-34;
+  for(let i=0;i<64;i++){const p=((lt*.006+hs(i)*3)%1),on=ez(lt/60);if(p<0)continue;
+   const mx=(sx+ex)/2,my=Math.min(sy,ey)-26-hs(i+5)*22,u=1-p,x=u*u*sx+2*u*p*mx+p*p*ex+Math.sin(lt*.1+i)*1.5,y=u*u*sy+2*u*p*my+p*p*ey;
+   g.fillStyle='rgba('+(i%3?'170,80,255':'230,170,255')+','+(.8*Math.sin(p*Math.PI)*on)+')';g.fillRect(Math.round(x),Math.round(y),2,2)}
+  const pw=ez((lt-40)/300);lGlow(kx+6,gyb-34,36+pw*34,'170,80,255',.25+.4*pw)}
+ else{for(let i=0;i<60;i++){const p=((lt*.0055+hs(i)*3)%1),x=sx+(hs(i+8)-.5)*30+Math.sin(p*9+i)*8,y=sy-p*(150+hs(i+3)*80);
+   g.fillStyle='rgba('+(i%3?'255,220,130':'255,250,220')+','+(.85*Math.sin(p*Math.PI)*ez(lt/60))+')';g.fillRect(Math.round(x),Math.round(y),2,2)}
+  lGlow(sx,sy-20,60,'255,215,120',.3*ez(lt/80))}
+ g.restore();
+ this.wend(false);
+ if(abs){this.grade('#6a4a9a','#1a0a28',.6,'multiply');this.vig(.6);
+  // göz parlaması
+  const ek=ez((lt-120)/40)*(1-ez((lt-420)/80));if(ek>0)this.flash(.12*ek,'180,100,255')}
+ else{this.grade('#ffe0a8','#503820',.55,'soft-light');this.grade('#4a5878','#201828',.4,'multiply');this.rays(W*.45,.05,6,'255,230,170',.24*ez(lt/80),lt);this.vig(.5)}
+ this.motes(30,lt,abs?'200,150,255':'255,230,170',{a:.5,sp:.08,up:1,dx:.1})};
+// ---------- 3. Harita ----------
+C.e_map=function(lt){
+ R(0,0,W,H,'#0a0608');
+ const fl=.9+.1*Math.sin(lt*.13)+.05*Math.sin(lt*.37);
+ // masa
+ const gr=g.createRadialGradient(W/2,H/2,20,W/2,H/2,W*.6);gr.addColorStop(0,'#2a1a10');gr.addColorStop(1,'#0a0608');g.fillStyle=gr;g.fillRect(0,0,W,H);
+ const rise=1-ezo(lt/50),px=W/2-190,py=46+rise*14,pw=380,ph=262;
+ g.save();g.globalAlpha=ez(lt/30);
+ // parşömen (yırtık kenarlar)
+ g.fillStyle='#c9b184';g.beginPath();g.moveTo(px,py);
+ for(let x=0;x<=pw;x+=6)g.lineTo(px+x,py+(hs(x*.3)-.5)*4);for(let y=0;y<=ph;y+=6)g.lineTo(px+pw+(hs(y*.7)-.5)*4,py+y);
+ for(let x=pw;x>=0;x-=6)g.lineTo(px+x,py+ph+(hs(x*.5+9)-.5)*5);for(let y=ph;y>=0;y-=6)g.lineTo(px+(hs(y*.9+4)-.5)*4,py+y);g.closePath();g.fill();
+ const pg=g.createRadialGradient(px+pw*.5,py+ph*.5,20,px+pw*.5,py+ph*.5,pw*.7);pg.addColorStop(0,'rgba(255,240,200,.25)');pg.addColorStop(1,'rgba(90,50,20,.45)');g.fillStyle=pg;g.fillRect(px-4,py-4,pw+8,ph+8);
+ // kırışıklar
+ g.strokeStyle='rgba(90,60,30,.35)';g.lineWidth=1;for(let i=0;i<6;i++){g.beginPath();g.moveTo(px+hs(i)*pw,py);g.lineTo(px+hs(i)*pw+(hs(i+3)-.5)*60,py+ph);g.stroke()}
+ const X=v=>px+v*pw,Y=v=>py+v*ph,INK='#3a2414';
+ // dağlar
+ g.fillStyle='rgba(58,36,20,.8)';for(const [mx,my,s] of [[.32,.3,1],[.42,.24,1.25],[.52,.3,.9],[.62,.36,.8],[.25,.4,.8]]){g.beginPath();g.moveTo(X(mx)-22*s,Y(my)+18*s);g.lineTo(X(mx),Y(my)-14*s);g.lineTo(X(mx)+22*s,Y(my)+18*s);g.fill()}
+ // nehir
+ g.strokeStyle='rgba(70,100,120,.7)';g.lineWidth=3;g.beginPath();for(let i=0;i<=20;i++){const u=i/20,x=X(.05+u*.9),y=Y(.18+u*.62)+Math.sin(u*9)*6;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();
+ // bambu ormanı (doğu)
+ const fx=X(.8),fy=Y(.3);g.strokeStyle='rgba(60,90,50,.9)';g.lineWidth=2;for(let i=0;i<7;i++){const x=fx-18+i*6,h=26+hs(i)*14;g.beginPath();g.moveTo(x,fy+14);g.lineTo(x,fy+14-h);g.stroke();g.fillStyle=INK;for(let j=0;j<3;j++)g.fillRect(x-2,fy+14-h*(.3+j*.25),4,1)}
+ // arena (batı) ve kırık mühür
+ const ax=X(.2),ay=Y(.66);g.strokeStyle='#8a1a14';g.lineWidth=2;g.beginPath();g.arc(ax,ay,10,0,TAU);g.stroke();
+ g.beginPath();g.moveTo(ax-7,ay-7);g.lineTo(ax+7,ay+7);g.moveTo(ax+7,ay-7);g.lineTo(ax-7,ay+7);g.stroke();
+ // yol: arenadan ormana, çizildikçe ilerler
+ const prog=ez((lt-70)/330),cx1=X(.42),cy1=Y(.5),cx2=X(.62),cy2=Y(.18);
+ g.strokeStyle='#a01c14';g.lineWidth=2;g.setLineDash([6,4]);g.beginPath();
+ for(let i=0;i<=40;i++){const u=i/40*prog,w=1-u,x=w*w*w*ax+3*w*w*u*cx1+3*w*u*u*cx2+u*u*u*fx,y=w*w*w*ay+3*w*w*u*cy1+3*w*u*u*cy2+u*u*u*fy;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();g.setLineDash([]);
+ // Wen'i temsil eden asa işareti, yol ucunda
+ if(prog>.98){const a=ez((lt-400)/30);g.globalAlpha=a;g.strokeStyle='#d0a050';g.lineWidth=2;g.beginPath();g.moveTo(fx+22,fy-14);g.lineTo(fx+22,fy+16);g.stroke();g.fillStyle='#d0a050';g.fillRect(fx+19,fy-16,7,3);g.globalAlpha=ez(lt/30)}
+ // etiketler
+ g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.font='bold 9px '+FONT_S;
+ g.fillText(TR('DEMİR YUMRUK ARENASI'),ax,ay+20);g.font='italic 8px '+FONT_S;g.fillStyle='#8a1a14';g.fillText(TR('KIRIK MÜHÜR'),ax,ay+31);
+ g.fillStyle=INK;g.font='bold 9px '+FONT_S;g.globalAlpha=ez(lt/30)*(.3+.7*ez((lt-250)/80));g.fillText(TR('BAMBU GÖLGE ORMANI'),fx+4,fy-30);
+ g.restore();
+ // mum ışığı ve karartma
+ lGlow(W*.5+Math.sin(lt*.02)*20,H*.3,330,'255,190,110',.28*fl);
+ const vg=g.createRadialGradient(W/2,H/2,H*.25,W/2,H/2,W*.62);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.8)');g.fillStyle=vg;g.fillRect(0,0,W,H);
+ this.motes(18,lt,'255,210,150',{a:.4,sp:.05,up:1})};
+// ---------- 4. Kara Ejderha'nın gözü ----------
+C.e_eye=function(lt){
+ R(0,0,W,H,'#07040a');
+ const cx=W/2,cy=H*.48,p=ez((lt-70)/170),rw=170,rh=62*p+1,bl=lt>360&&lt<378?1-Math.abs((lt-369)/9):0;
+ // pullar
+ for(let r=0;r<12;r++)for(let c=-1;c<14;c++){const x=c*52+(r%2)*26-((lt*.04)%1),y=r*30+10,dd=Math.hypot(x-cx,y-cy),a=clampf(1-dd/360,0,1);
+  g.fillStyle='rgba('+Math.round(34+40*a)+','+Math.round(18+12*a)+','+Math.round(48+34*a)+',1)';g.beginPath();g.arc(x,y,27,0,TAU);g.fill();
+  g.strokeStyle='rgba(120,70,140,'+(.15+.35*a)+')';g.lineWidth=1;g.beginPath();g.arc(x,y,27,.2,Math.PI-.2);g.stroke()}
+ // göz çukuru gölgesi
+ const sg=g.createRadialGradient(cx,cy,10,cx,cy,rw*1.5);sg.addColorStop(0,'rgba(0,0,0,.85)');sg.addColorStop(.6,'rgba(0,0,0,.55)');sg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=sg;g.fillRect(0,0,W,H);
+ const hh=rh*(1-bl*.95);
+ g.save();g.beginPath();g.moveTo(cx-rw,cy);g.quadraticCurveTo(cx,cy-hh*1.7,cx+rw,cy);g.quadraticCurveTo(cx,cy+hh*1.7,cx-rw,cy);g.closePath();g.clip();
+ const eg=g.createRadialGradient(cx,cy,6,cx,cy,rw);eg.addColorStop(0,'#ffb040');eg.addColorStop(.45,'#e0501a');eg.addColorStop(1,'#4a0806');g.fillStyle=eg;g.fillRect(cx-rw,cy-hh*2,rw*2,hh*4);
+ const ir=hh*.95,dil=6+3*Math.sin(lt*.02)-ez((lt-250)/120)*3;
+ g.fillStyle='rgba(30,4,2,.55)';g.beginPath();g.arc(cx,cy,ir,0,TAU);g.fill();
+ g.fillStyle='#050203';g.beginPath();g.ellipse(cx,cy,dil,hh*1.55,0,0,TAU);g.fill();
+ g.fillStyle='rgba(255,240,210,.85)';g.fillRect(Math.round(cx-ir*.45),Math.round(cy-hh*.55),4,3);
+ g.restore();
+ g.strokeStyle='#0a0610';g.lineWidth=4;g.beginPath();g.moveTo(cx-rw,cy);g.quadraticCurveTo(cx,cy-hh*1.7,cx+rw,cy);g.quadraticCurveTo(cx,cy+hh*1.7,cx-rw,cy);g.stroke();
+ g.strokeStyle='rgba(120,70,150,.5)';g.lineWidth=1;g.beginPath();g.moveTo(cx-rw,cy-2);g.quadraticCurveTo(cx,cy-hh*1.7-4,cx+rw,cy-2);g.stroke();
+ lGlow(cx,cy,260,'255,70,30',.38*p);
+ // soluk, sis
+ for(let i=0;i<5;i++){const x=((i*170+lt*.35)%(W+260))-130,y=H*.6+Math.sin(i*2+lt*.01)*20,sgr=g.createRadialGradient(x,y,4,x,y,120);sgr.addColorStop(0,'rgba(60,40,80,.28)');sgr.addColorStop(1,'rgba(60,40,80,0)');g.fillStyle=sgr;g.fillRect(x-120,y-120,240,240)}
+ this.motes(26,lt,'255,120,80',{a:.4,sp:.05,up:1});this.vig(.7)};
+// ---------- 5. Kapı: Kai doğuya yürür ----------
+C.e_gate=function(lt){this.use('o_giris');const kx=150+lt*.42;this.frame(kx+56,this.gy(kx)-16,2.15);this.wbeg();
+ WPH=G.t*.06;this.kaiF({x:kx,y:this.gy(kx),face:1,pose:'walk',vx:1,t:G.t});WPH=null;
+ this.wend(false);
+ this.grade('#ffcf90','#604060',.7,'soft-light');lGlow(W*.95,H*.3,W*.9,'255,190,110',.3);this.rays(W*.55,.5,8,'255,220,160',.2,lt);
+ // ön plan: hızla kayan bambu gövdeleri (sonraki bölümün habercisi)
+ const off=cam.x*2.1;g.save();
+ for(let i=-1;i<9;i++){const x=Math.round(((i*210-off)%(W+260)+W+260)%(W+260))-130,w=9+Math.round(hs(i+4)*5),edge=Math.abs(x-W/2)/(W/2);
+  g.globalAlpha=clampf(.55+edge*.45,0,.95);R(x,0,w,H,'#05080a');for(let j=0;j<7;j++)R(x-1,Math.round(j*62+hs(i*3+j)*24),w+2,2,'#0c1210');
+  for(let j=0;j<4;j++){const ly=40+j*70+hs(i+j)*20;g.globalAlpha*=.8;R(x+w,ly,16+Math.round(hs(i+j+2)*10),1,'#05080a');R(x+w+14,ly+1,6,1,'#05080a')}}
+ g.restore();
+ this.motes(34,lt,'255,230,190',{a:.5,sp:.07,dx:.6});this.fgGrass(lt,cam.x,'#06060a');this.vig(.5)};
+// ---------- 6. Bölüm kartı ----------
+C.e_title=function(lt){R(0,0,W,H,'#050305');
+ const cx=W/2,cy=H/2+4,k=ezo((lt-26)/36);
+ g.save();for(let i=0;i<46;i++){const yy=cy-19+i*.85+Math.sin(i*1.3)*1.4,x0=cx-W*.38+hs(i)*12,len=(W*.76-hs(i+2)*40)*k,th=1+hs(i+4)*1.4;
+  g.globalAlpha=.08+hs(i+6)*.12;g.fillStyle=i%5===0?'#1c3a22':'#2f5a34';g.fillRect(Math.round(x0),Math.round(yy),Math.round(len),Math.ceil(th))}g.restore();
+ const ou=1-ez((lt-300)/36);
+ g.save();g.textAlign='center';g.textBaseline='middle';
+ g.globalAlpha=ez((lt-8)/22)*ou;g.font='9px monospace';g.fillStyle='#b09868';g.fillText(TR('BÖLÜM 1 TAMAMLANDI'),cx,cy-60);
+ g.globalAlpha=ez((lt-50)/24)*ou;g.font='11px monospace';g.fillStyle='#c8a870';g.fillText(TR('BÖLÜM 2'),cx,cy-30);
+ g.globalAlpha=ez((lt-62)/26)*ou;g.font='bold 26px '+FONT_S;g.fillStyle='#000';g.fillText(TR('BAMBU GÖLGE ORMANI'),cx+1,cy+1);g.fillStyle='#e8f0d0';g.fillText(TR('BAMBU GÖLGE ORMANI'),cx,cy);
+ g.globalAlpha=ez((lt-110)/30)*ou;g.font='italic 11px '+FONT_S;g.fillStyle='#b8c898';g.fillText(TR('Wen\'i bul.'),cx,cy+34);
+ // bambu damgası
+ const sa=ez((lt-86)/6);if(sa>0){g.globalAlpha=sa*ou;g.save();g.translate(cx+W*.34,cy-24);g.rotate(.05);const s=1+(1-sa)*.6;g.scale(s,s);R(-11,-11,22,22,'#1f4a2a');R(-9,-9,18,18,'#2f6a3c');g.font='bold 14px serif';g.fillStyle='#e8f0d0';g.fillText('竹',0,0);g.restore()}
+ g.restore();
+ this.motes(26,lt,'190,230,170',{a:.45,sp:.05,up:1});
+ if(lt>=86&&lt<94)this.flash(.14*(1-(lt-86)/8),'200,255,200')};
 })();
 
 </script>
