@@ -8474,6 +8474,21 @@ try{(()=>{const DEV_MENU=true;if(!DEV_MENU)return;
  try{if(typeof LOC!=='undefined'&&LOC.D)Object.assign(LOC.D,{'Geliştirici Modu':'Developer Mode','GELİŞTİRİCİ MODU':'DEVELOPER MODE','Ölümsüzlük':'Invincibility','Sınırsız iç enerji':'Infinite inner energy','Tek vuruşta öldür':'One-hit kill','Hitbox göster':'Show hitboxes','FPS / konum bilgisi':'FPS / position info','AÇIK':'ON','kapalı':'off','Tüm stilleri aç':'Unlock all styles','Tüm ustalık yeteneklerini aç':'Unlock all mastery skills','+50 Ustalık puanı':'+50 mastery points','Can, iç enerji ve iksirleri doldur':'Refill health, energy and potions','Haritayı tamamen aç':'Reveal whole map','Işınlan':'Teleport','Odadaki düşmanları öldür':'Kill enemies in room','Bu odanın arenalarını sıfırla':"Reset this room's arenas",'Bölüm 2 başlangıcına git':'Go to Chapter 2 start','Kapat':'Close','Tüm stiller açıldı':'All styles unlocked','Tüm yetenekler açıldı':'All skills unlocked','Dolduruldu':'Refilled','Harita açıldı':'Map revealed','Yukarı/Aşağı seç · Sol/Sağ oda · Onay uygula · Geri kapat':'Up/Down select · Left/Right room · Confirm apply · Back close'})}catch(e){}
 })()}catch(err){console.error('dev',err)}
 
+// ================= YÜKSEK ODALARDA TEK PARÇA DİKEY PARALAKS =================
+// Eski davranış: paralaks 272 px'lik bantlar halinde üst üste tekrarlanıyordu (kat kat görünüm).
+// Yeni: gök ekranı kaplar; ön katmanlar oda tabanına bağlı kalır ve yukarı çıkıldıkça katman derinliğine göre yavaşça aşağı kayar.
+try{(()=>{const prev=Parallax.bgImg.bind(Parallax),F=[0,.22,.42,.68];
+ Parallax.bgImg=function(set){if(RH-ROY<=H+40)return prev(set);
+  const sky=set.find(k=>k.slice(-1)==='0');
+  if(sky){const sRH=RH;RH=ROY+H;window.PX_HB=H;try{prev([sky])}finally{RH=sRH;window.PX_HB=null}}
+  else{const D=PARA_DEF[ROOM.para||ROOM.theme]||PARA_DEF.school;g.fillStyle=D.sky[1];g.fillRect(0,0,W,H)}
+  const tv=this.tv(),so=ROOM.pox||0,drop=Math.max(0,(RH-cam.y)-H);
+  for(const k of set){const i=+k.slice(-1);if(i===0)continue;const im=PIMG[k];if(!im||!im.ok)continue;const w=im.width,h=im.height;
+   const HB=H+drop*F[i],bot=PIMG_BOT[k]||h-1,oy=Math.max(Math.round(HB-1-bot),Math.round(HB-h+15+(.5-tv)*2*PIMG_VR[i]));
+   if(oy>=H)continue;const P2W=2*w,ox=(((cam.x+so)*PIMG_SP[i]+so*(i+1))%P2W+P2W)%P2W;
+   for(let x=-ox,n=0;x<W;x+=w,n++){const xr=Math.round(x);if(n%2===0)g.drawImage(im,xr,oy);else{g.save();g.translate(xr+w,oy);g.scale(-1,1);g.drawImage(im,0,0);g.restore()}}}};
+})()}catch(err){console.error('tallpx',err)}
+
 </script>
 </body></html>
 
