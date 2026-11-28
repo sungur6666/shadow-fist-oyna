@@ -3718,7 +3718,7 @@ const Map2={S:1,
    const p1=dpos(a,ch),p2=ROOMS[b]&&dpos(b,ch2);if(!p1)continue;const c=lcol[kind]||'#ccc',st=lst[kind]||'line';
    if(va){const h1=hub(a),side=ch&&p1[0]<=pos(a)[0]+2||p1[0]>=pos(a)[0]+ROOMS[a].rows[0].length*s-2;
     if(side){seg(p1,[h1[0],p1[1]],c,st);seg([h1[0],p1[1]],h1,c,st)}else{seg(p1,[p1[0],h1[1]],c,st);seg([p1[0],h1[1]],h1,c,st)}R(Math.round(h1[0])-1,Math.round(h1[1])-1,3,3,c)}
-   if(p2&&!drawn.has(id)){seg(p1,p2,c,st);drawn.add(id)}
+   if(p2&&!drawn.has(id)){Map2.route(a,b,p1,p2,pos,s).reduce((q,r)=>{seg(q,r,c,st);return r});drawn.add(id)}
    R(Math.round(p1[0])-1,Math.round(p1[1])-1,3,3,'#1a1410');R(Math.round(p1[0]),Math.round(p1[1]),1,1,c);
    if(lock&&!G.done[lock])this.ico2('lock',p1[0]+5,p1[1]-2);
    if(!G.visited[b]&&known(b)===false&&G.t%40<26)T('?',p1[0]+3,p1[1]-5,'#e8d8a0',6)}}
@@ -8516,13 +8516,20 @@ try{(()=>{
   w_kapi:[1,0],w_patika:[2,0],w_koru:[3,0],w_gol:[4,0],w_sunak:[5,0],w_meydan:[6,0],c_kapi:[7,0],c_avlu:[8,0],c_zil:[9,0],c_cati:[10,0],c_koridor:[11,0],c_kutup:[12,0],c_arena:[13,0],
   f_giris:[0,1],f_yol:[1,1],f_kopru:[2,1],f_kule:[3,1],f_arena:[4,1],s_giris:[5,1],s_sirt:[6,1],s_magara:[7,1],s_kule:[8,1],s_kopru:[9,1],s_sigi:[10,1],s_arena:[11,1],
   g_ruzgar:[12,1],g_kavsak:[13,1],g_kopru:[14,1],g_kule:[15,1],g_asma:[16,1],g_sigi:[17,1],g_arena:[18,1],g_ucurum:[19,1],
-  f_sel:[0,2],f_sig:[1,2],m_giris:[19,2],m_avlu:[18,2],m_koridor:[17,2],m_kule:[16,2],m_salon:[15,2],m_sigi:[14,2],m_arena:[13,2],f_magara:[0,3]};
+  f_sel:[0,2],f_sig:[1,2],m_giris:[19,2],m_avlu:[20,2],m_koridor:[21,2],m_kule:[22,2],m_salon:[23,2],m_sigi:[24,2],m_arena:[25,2],f_magara:[0,3]};
  const GAPX=4,GAPY=6,cw={},rh={};
  for(const k in GRID){const r=ROOMS[k];if(!r)continue;const [c,ro]=GRID[k],w=r.rows[0].length,h=r.rows.length;cw[c]=Math.max(cw[c]||0,w);rh[ro]=Math.max(rh[ro]||0,h)}
- const cx={},ry={};let x=0;for(let c=0;c<=19;c++){cx[c]=x;x+=(cw[c]||0)+GAPX}let y=0;for(let ro=-1;ro<=3;ro++){ry[ro]=y;y+=(rh[ro]||0)+GAPY}
+ const cx={},ry={};let x=0;for(let c=0;c<=25;c++){cx[c]=x;x+=(cw[c]||0)+GAPX}let y=0;for(let ro=-1;ro<=3;ro++){ry[ro]=y;y+=(rh[ro]||0)+GAPY}
  const OX=2000,OY=0; // Bölüm 1 haritasıyla çakışmasın
- for(const k in GRID){const r=ROOMS[k];if(!r)continue;const [c,ro]=GRID[k],w=r.rows[0].length,h=r.rows.length;
-  r.map=[OX+cx[c]+Math.round(((cw[c]||w)-w)/2),OY+ry[ro]+Math.round(((rh[ro]||h)-h)/2)]}
+ // kapı satırı (yan kapılar)
+ const door=(k,ch)=>{const rows=ROOMS[k].rows;let ys=[],xs=[];rows.forEach((r,y)=>{for(let x=0;x<r.length;x++)if(r[x]===ch){ys.push(y);xs.push(x)}});return ys.length?{y:Math.max(...ys),x:Math.min(...xs),X:Math.max(...xs),w:rows[0].length}:null};
+ const Y={};
+ for(let ro=-1;ro<=3;ro++){const seq=Object.keys(GRID).filter(k=>ROOMS[k]&&GRID[k][1]===ro).sort((a,b)=>GRID[a][0]-GRID[b][0]);
+  let prev=null;for(const k of seq){const h=ROOMS[k].rows.length;let y=ry[ro]+Math.round(((rh[ro]||h)-h)/2);
+   if(prev&&GRID[k][0]===GRID[prev][0]+1){const L=ROOMS[prev].links||{};for(const ch in L){if(L[ch][0]!==k)continue;const da=door(prev,ch),db=door(k,L[ch][1]);if(da&&db&&da.X===da.w-1&&db.x===0){y=Y[prev]+da.y-db.y}break}}
+   Y[k]=y;prev=k}}
+ for(const k in GRID){const r=ROOMS[k];if(!r)continue;const [c,ro]=GRID[k],w=r.rows[0].length;
+  r.map=[OX+cx[c]+Math.round(((cw[c]||w)-w)/2),OY+Y[k]]}
  // harita ekranında yalnız bulunulan bölümün odaları
  const isCh2=k=>ROOMS[k]&&ROOMS[k].theme==='frost';
  const oDraw=Map2.draw.bind(Map2);
@@ -8532,6 +8539,21 @@ try{(()=>{
   try{return oDraw.apply(this,arguments)}finally{T=oT;for(const [r,m] of hid)r.map=m}};
  try{if(typeof LOC!=='undefined'&&LOC.D)Object.assign(LOC.D,{'KAYIP İMPARATORLUK':'LOST EMPIRE','Bölüm 2 · Üst katman':'Chapter 2 · Upper tier'})}catch(e){}
 })()}catch(err){console.error('map2',err)}
+// harita bağlantı çizgisi yönlendirme: düz, dik açılı ya da odalar arası boşluktan
+try{Map2.route=function(a,b,p1,p2,pos,s){
+ if(Math.abs(p1[0]-p2[0])<=2||Math.abs(p1[1]-p2[1])<=2)return[p1,p2];
+ const rc=k=>{const [x,y]=pos(k),R_=ROOMS[k];return{x0:x,y0:y,x1:x+R_.rows[0].length*s,y1:y+R_.rows.length*s}};
+ const A=rc(a),B=rc(b),side=(p,r)=>p[0]<=r.x0+s*1.5?'L':p[0]>=r.x1-s*1.5?'R':p[1]<=r.y0+s*1.5?'T':'B';
+ const sa=side(p1,A),sb=side(p2,B),st=4;
+ const out=(p,sd)=>sd==='L'?[p[0]-st,p[1]]:sd==='R'?[p[0]+st,p[1]]:sd==='T'?[p[0],p[1]-st]:[p[0],p[1]+st];
+ const q1=out(p1,sa),q2=out(p2,sb);
+ const vSep=A.y1<B.y0||B.y1<A.y0,hSep=A.x1<B.x0||B.x1<A.x0;
+ if(vSep&&(sa==='L'||sa==='R'||sa==='T'||sa==='B')){const gy=A.y1<B.y0?(A.y1+B.y0)/2:(B.y1+A.y0)/2;return[p1,q1,[q1[0],gy],[q2[0],gy],q2,p2]}
+ if(hSep){const gx=A.x1<B.x0?(A.x1+B.x0)/2:(B.x1+A.x0)/2;return[p1,q1,[gx,q1[1]],[gx,q2[1]],q2,p2]}
+ const mx=(p1[0]+p2[0])/2;return[p1,[mx,p1[1]],[mx,p2[1]],p2]}}catch(e){}
+// kollu kısayollar ve ikincil geçitler haritada kesikli (ikincil yol) çizilsin
+try{for(const [a,b] of [['f_kule','f_giris'],['c_zil','c_avlu'],['s_kule','s_giris'],['f_kopru','f_sel'],['c_arena','g_kavsak'],['f_arena','s_giris']])
+ for(const [x,y] of [[a,b],[b,a]]){const L=ROOMS[x]&&ROOMS[x].links;if(!L)continue;for(const ch in L){if(L[ch][0]!==y)continue;if(x==='c_avlu'&&ch!=='2')continue;if(x==='c_zil'&&ch!=='2')continue;L[ch][2]='alt'}}}catch(e){}
 
 </script>
 </body></html>
