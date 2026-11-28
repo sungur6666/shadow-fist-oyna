@@ -8442,10 +8442,12 @@ try{(()=>{const DEV_MENU=true;if(!DEV_MENU)return;
  const oKP=killPlayer;killPlayer=function(){if(o.god&&G.mode!=='train'){P.hp=maxHp();if(D.safe){P.x=D.safe.x;P.y=D.safe.y;P.vx=0;P.vy=0}return}return oKP.apply(this,arguments)};
  const oCH=Combat.hit.bind(Combat);Combat.hit=function(e,m,opt){if(o.ohk&&e&&!(e.d&&e.d.dummy)){opt=Object.assign({},opt||{});opt.mul=(opt.mul||1)*60}return oCH(e,m,opt)};
  // girdi
+ const goDev=()=>{if(!okP())return;const it=pauseItems();if(it[G.sel]&&it[G.sel][0]==='dev'){G.scene='devmenu';G.dsel=G.dsel||0;pressed.ok=pressed.light=pressed.jump=false;Snd.sfx('ui')}};
+ const oUM=updateMenus;updateMenus=function(){if(G.scene!=='pause')return oUM.apply(this,arguments);const oh=Ptr.handle;Ptr.handle=function(){const r=oh.apply(this,arguments);goDev();return r};try{return oUM.apply(this,arguments)}finally{Ptr.handle=oh}};
  let fT=performance.now(),fps=60;
  const oStep=step;step=function(){
-  if(G.scene==='pause'&&okP()){const it=pauseItems();if(it[G.sel]&&it[G.sel][0]==='dev'){G.scene='devmenu';G.dsel=G.dsel||0;pressed.ok=pressed.light=pressed.jump=false;Snd.sfx('ui')}}
-  if(G.scene==='devmenu'){const it=items(),n=it.length;if(pressed.U){G.dsel=(G.dsel+n-1)%n;Snd.sfx('ui')}if(pressed.D){G.dsel=(G.dsel+1)%n;Snd.sfx('ui')}
+  if(G.scene==='pause')goDev();
+  if(G.scene==='devmenu'){Ptr.handle();const it=items(),n=it.length;if(pressed.U){G.dsel=(G.dsel+n-1)%n;Snd.sfx('ui')}if(pressed.D){G.dsel=(G.dsel+1)%n;Snd.sfx('ui')}
    const a=it[G.dsel][0];if(a==='tp'&&(pressed.L||pressed.R))act('tp',pressed.L?-1:1);
    if(backP()){G.scene='pause';pressed.back=pressed.pause=false}else if(okP()){pressed.ok=pressed.light=pressed.jump=false;act(a)}
    G.t++;return}
