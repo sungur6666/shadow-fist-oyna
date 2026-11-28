@@ -8503,6 +8503,12 @@ try{(()=>{
  const oSt=step;step=function(){if(G.scene!=='ktravel'&&L.length!==ALL.length)restore();return oSt.apply(this,arguments)};
  try{if(typeof LOC!=='undefined'&&LOC.D)Object.assign(LOC.D,{"Bölüm 1'e dönüş yolu kar altında kaldı":'The road back to Chapter 1 is buried in snow'})}catch(e){}
 })()}catch(err){console.error('travel',err)}
+// ================= VURUŞ IŞIKLARI SÖNMÜYORDU (ortam parçacığı tanımsız temalar, ör. Bölüm 2 buz) =================
+try{(()=>{if(typeof ATM2==='undefined'||!ATM2.HL)return;const oT=ATM2.tick.bind(ATM2);
+ ATM2.tick=function(){const H0=ATM2.HL,b=H0.map(h=>h.l);const r=oT.apply(this,arguments);const H1=ATM2.HL;
+  if(H1.length&&H1.length===b.length&&H1.every((h,i)=>h.l===b[i]))for(let i=H1.length-1;i>=0;i--)if(--H1[i].l<=0)H1.splice(i,1);
+  return r};
+})()}catch(err){console.error('hlfix',err)}
 
 </script>
 </body></html>
