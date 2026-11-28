@@ -3743,8 +3743,8 @@ const Map2={S:1,
   {const vis=allRooms.filter(k=>G.visited[k]).length,arT=allRooms.reduce((n,k)=>n+(ROOMS[k].arenas||[]).length,0),arD=Object.keys(G.done).filter(k=>/^[a-z_]+:A:\d+$/.test(k)&&G.done[k]).length;
    const y=162;R(10,y-3,78,1,'#3a3028');[['Keşif',vis+'/'+allRooms.length],['Ki Taşı',this.got('K')+'/'+this.total('K')],['Arena',arD+'/'+arT],['Ki Kalbi',(G.items.hearts||0)+'/3']].forEach((r,i)=>{T(r[0],12,y+i*8,'#998',5);T(r[1],88,y+i*8,'#fff',5,'right')})}
   // bölge kartları
-  const RO=['okul','bambu','kopru','manastir','tapinak','arena','mezar','suyolu'],INF={okul:'İlk arena · Ling',bambu:'Turna Kanadı',kopru:'Ejderha Kırıcı',manastir:'Kadim Mühür',tapinak:'Gölge Adımı',arena:'Demir Yumruk',mezar:'Ki Kalbi',suyolu:'Gizli çay evi'};
-  const cw=(W-12-7*3)/8;RO.forEach((r,i)=>{const x=6+i*(cw+3),y=204,rc=REGC[r],rk=allRooms.filter(k=>ROOMS[k].reg===r),vs=rk.filter(k=>G.visited[k]).length,th=THEME[(ROOMS[rk[0]]||{}).theme]||THEME.school;
+  const RO=(ROOM&&ROOM.theme==='frost')?['donmus','beyazbambu','canmanastir','firtina','goksel','mabet']:['okul','bambu','kopru','manastir','tapinak','arena','mezar','suyolu'],INF={donmus:'Buz Arenası',beyazbambu:'Bambu Meydanı',canmanastir:'Bin Çan Salonu',firtina:'Fırtına Meydanı',goksel:'Turna Kanadı kapısı',mabet:'Buz Bekçisi Shuang',okul:'İlk arena · Ling',bambu:'Turna Kanadı',kopru:'Ejderha Kırıcı',manastir:'Kadim Mühür',tapinak:'Gölge Adımı',arena:'Demir Yumruk',mezar:'Ki Kalbi',suyolu:'Gizli çay evi'};
+  const cw=(W-12-(RO.length-1)*3)/RO.length;RO.forEach((r,i)=>{const x=6+i*(cw+3),y=204,rc=REGC[r],rk=allRooms.filter(k=>ROOMS[k].reg===r),vs=rk.filter(k=>G.visited[k]).length,th=THEME[(ROOMS[rk[0]]||{}).theme]||THEME.school;
    R(x,y,cw,48,'#0c0a0e');R(x,y,cw,1,rc);R(x,y+47,cw,1,'#2a2228');R(x,y,1,48,'#2a2228');R(x+cw-1,y,1,48,'#2a2228');
    const gy=y+2;for(let j=0;j<14;j++)R(x+2,gy+j,cw-4,1,j<7?th.sky[0]:th.sky[1]);
    if(vs){const big=rk.filter(k=>G.visited[k]).sort((a,b)=>ROOMS[b].rows[0].length*ROOMS[b].rows.length-ROOMS[a].rows[0].length*ROOMS[a].rows.length)[0];const im=this.mini(big),sc=Math.min((cw-6)/im.width,12/im.height);g.imageSmoothingEnabled=false;g.drawImage(im,Math.round(x+cw/2-im.width*sc/2),Math.round(gy+14-im.height*sc-1),Math.round(im.width*sc),Math.round(im.height*sc));g.imageSmoothingEnabled=true}
@@ -8509,6 +8509,29 @@ try{(()=>{if(typeof ATM2==='undefined'||!ATM2.HL)return;const oT=ATM2.tick.bind(
   if(H1.length&&H1.length===b.length&&H1.every((h,i)=>h.l===b[i]))for(let i=H1.length-1;i>=0;i--)if(--H1[i].l<=0)H1.splice(i,1);
   return r};
 })()}catch(err){console.error('hlfix',err)}
+
+// ================= BÖLÜM 2 HARİTA DÜZENİ (şematik harita, bolum2_harita.png) =================
+try{(()=>{
+ const GRID={w_gizli:[3,-1],
+  w_kapi:[1,0],w_patika:[2,0],w_koru:[3,0],w_gol:[4,0],w_sunak:[5,0],w_meydan:[6,0],c_kapi:[7,0],c_avlu:[8,0],c_zil:[9,0],c_cati:[10,0],c_koridor:[11,0],c_kutup:[12,0],c_arena:[13,0],
+  f_giris:[0,1],f_yol:[1,1],f_kopru:[2,1],f_kule:[3,1],f_arena:[4,1],s_giris:[5,1],s_sirt:[6,1],s_magara:[7,1],s_kule:[8,1],s_kopru:[9,1],s_sigi:[10,1],s_arena:[11,1],
+  g_ruzgar:[12,1],g_kavsak:[13,1],g_kopru:[14,1],g_kule:[15,1],g_asma:[16,1],g_sigi:[17,1],g_arena:[18,1],g_ucurum:[19,1],
+  f_sel:[0,2],f_sig:[1,2],m_giris:[19,2],m_avlu:[18,2],m_koridor:[17,2],m_kule:[16,2],m_salon:[15,2],m_sigi:[14,2],m_arena:[13,2],f_magara:[0,3]};
+ const GAPX=4,GAPY=6,cw={},rh={};
+ for(const k in GRID){const r=ROOMS[k];if(!r)continue;const [c,ro]=GRID[k],w=r.rows[0].length,h=r.rows.length;cw[c]=Math.max(cw[c]||0,w);rh[ro]=Math.max(rh[ro]||0,h)}
+ const cx={},ry={};let x=0;for(let c=0;c<=19;c++){cx[c]=x;x+=(cw[c]||0)+GAPX}let y=0;for(let ro=-1;ro<=3;ro++){ry[ro]=y;y+=(rh[ro]||0)+GAPY}
+ const OX=2000,OY=0; // Bölüm 1 haritasıyla çakışmasın
+ for(const k in GRID){const r=ROOMS[k];if(!r)continue;const [c,ro]=GRID[k],w=r.rows[0].length,h=r.rows.length;
+  r.map=[OX+cx[c]+Math.round(((cw[c]||w)-w)/2),OY+ry[ro]+Math.round(((rh[ro]||h)-h)/2)]}
+ // harita ekranında yalnız bulunulan bölümün odaları
+ const isCh2=k=>ROOMS[k]&&ROOMS[k].theme==='frost';
+ const oDraw=Map2.draw.bind(Map2);
+ Map2.draw=function(){const inCh2=ROOM&&ROOM.theme==='frost',hid=[];
+  for(const k in ROOMS){const r=ROOMS[k];if(r.map&&isCh2(k)!==inCh2){hid.push([r,r.map]);r.map=undefined}}
+  const oT=T;if(inCh2)T=function(s,...a){if(s==='UNUTULMUŞ TAPINAK')s='KAYIP İMPARATORLUK';else if(s==='Bölüm 1 · Genişletilmiş harita')s='Bölüm 2 · Üst katman';return oT(s,...a)};
+  try{return oDraw.apply(this,arguments)}finally{T=oT;for(const [r,m] of hid)r.map=m}};
+ try{if(typeof LOC!=='undefined'&&LOC.D)Object.assign(LOC.D,{'KAYIP İMPARATORLUK':'LOST EMPIRE','Bölüm 2 · Üst katman':'Chapter 2 · Upper tier'})}catch(e){}
+})()}catch(err){console.error('map2',err)}
 
 </script>
 </body></html>
