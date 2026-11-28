@@ -8394,5 +8394,84 @@ try{(()=>{const A={"plx": {"frost_0": "data:image/webp;base64,UklGRlozAABXRUJQVl
 })()}catch(err){console.error('ch2art',err)}
 
 </script>
+<script>
+// ================= GELİŞTİRİCİ MODU (test için) =================
+// Yayından önce gizlemek için DEV_MENU=false yapın.
+try{(()=>{const DEV_MENU=true;if(!DEV_MENU)return;
+ const KEY='sf_dev';let o={};try{o=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){}
+ const sv=()=>{try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}};
+ const D=window.DEV={o,tp:0,msg:'',msgT:0,safe:null};
+ const rooms=()=>Object.keys(ROOMS);
+ const flash=m=>{D.msg=m;D.msgT=G.t+150;Snd.sfx('ui')};
+ const enterRoom=id=>{const L=ROOMS[id]&&ROOMS[id].links,via=L?Object.keys(L)[0]:undefined;World.enter(id,via);G.cp=G.cp||{};G.scene='play';if(P){P.vx=0;P.vy=0;P.st=P.st==='dead'?'free':P.st}};
+ const onoff=v=>v?'AÇIK':'kapalı';
+ const items=()=>{const rs=rooms(),id=rs[((D.tp%rs.length)+rs.length)%rs.length],r=ROOMS[id];return[
+  ['god','Ölümsüzlük: '+onoff(o.god)],
+  ['qi','Sınırsız iç enerji: '+onoff(o.qi)],
+  ['ohk','Tek vuruşta öldür: '+onoff(o.ohk)],
+  ['hit','Hitbox göster: '+onoff(G.showHit)],
+  ['fps','FPS / konum bilgisi: '+onoff(o.fps)],
+  ['styles','Tüm stilleri aç'],
+  ['skills','Tüm ustalık yeteneklerini aç'],
+  ['mp','+50 Ustalık puanı'],
+  ['heal','Can, iç enerji ve iksirleri doldur'],
+  ['map','Haritayı tamamen aç'],
+  ['tp','Işınlan: < '+(r&&r.n||id)+' >'],
+  ['kill','Odadaki düşmanları öldür'],
+  ['arena','Bu odanın arenalarını sıfırla'],
+  ['ch2','Bölüm 2 başlangıcına git'],
+  ['close','Kapat']]};
+ const act=(a,dir)=>{
+  if(a==='god'){o.god=!o.god;sv()}else if(a==='qi'){o.qi=!o.qi;sv()}else if(a==='ohk'){o.ohk=!o.ohk;sv()}
+  else if(a==='hit')G.showHit=!G.showHit;else if(a==='fps'){o.fps=!o.fps;sv()}
+  else if(a==='styles'){for(let i=0;i<STY.length;i++)G.styles[i]=true;if(G.loadout)for(let k=0,i=0;k<G.loadout.length;k++)if(G.loadout[k]<0){while(G.loadout.includes(i))i++;G.loadout[k]=i}save();flash('Tüm stiller açıldı')}
+  else if(a==='skills'){for(const s of SKILLS)G.sk[s.id]=1;G.items=G.items||{};G.items.dj=1;if(P){P.hp=maxHp();P.qi=maxQi();P.pot=maxPot()}save();flash('Tüm yetenekler açıldı')}
+  else if(a==='mp'){G.mp=(G.mp||0)+50;save();flash('+50 Ustalık puanı')}
+  else if(a==='heal'){if(P){P.hp=maxHp();P.qi=maxQi();P.pot=maxPot()}flash('Dolduruldu')}
+  else if(a==='map'){G.visited=G.visited||{};for(const k of rooms())G.visited[k]=1;save();flash('Harita açıldı')}
+  else if(a==='tp'){if(dir){D.tp+=dir;Snd.sfx('ui');return}const rs=rooms();enterRoom(rs[((D.tp%rs.length)+rs.length)%rs.length]);return}
+  else if(a==='kill'){let n=0;for(const e of E)if(e.st!=='dead'&&!(e.d&&e.d.dummy)){e.hp=0;killEnemy(e);n++}flash(n+' düşman öldürüldü')}
+  else if(a==='arena'){const id=ROOMID;for(const k of Object.keys(G.done))if(k.startsWith(id+':A:'))delete G.done[k];save();enterRoom(id);return}
+  else if(a==='ch2'){G.bossDead=true;G.done.ch2_start=1;enterRoom('f_giris');save();return}
+  else if(a==='close'){G.scene='play';return}
+  Snd.sfx('ui')};
+ // duraklatma menüsüne ekle
+ const oPI=pauseItems;pauseItems=function(){const it=oPI.apply(this,arguments);if(G.mode==='train')return it;const q=it.slice();q.splice(Math.max(1,q.length-1),0,['dev','Geliştirici Modu']);return q};
+ // hile etkileri
+ const oHP=hurtPlayer;hurtPlayer=function(){if(o.god&&G.mode!=='train'){if(P)P.hp=maxHp();return false}return oHP.apply(this,arguments)};
+ const oKP=killPlayer;killPlayer=function(){if(o.god&&G.mode!=='train'){P.hp=maxHp();if(D.safe){P.x=D.safe.x;P.y=D.safe.y;P.vx=0;P.vy=0}return}return oKP.apply(this,arguments)};
+ const oCH=Combat.hit.bind(Combat);Combat.hit=function(e,m,opt){if(o.ohk&&e&&!(e.d&&e.d.dummy)){opt=Object.assign({},opt||{});opt.mul=(opt.mul||1)*60}return oCH(e,m,opt)};
+ // girdi
+ let fT=performance.now(),fps=60;
+ const oStep=step;step=function(){
+  if(G.scene==='pause'&&okP()){const it=pauseItems();if(it[G.sel]&&it[G.sel][0]==='dev'){G.scene='devmenu';G.dsel=G.dsel||0;pressed.ok=pressed.light=pressed.jump=false;Snd.sfx('ui')}}
+  if(G.scene==='devmenu'){const it=items(),n=it.length;if(pressed.U){G.dsel=(G.dsel+n-1)%n;Snd.sfx('ui')}if(pressed.D){G.dsel=(G.dsel+1)%n;Snd.sfx('ui')}
+   const a=it[G.dsel][0];if(a==='tp'&&(pressed.L||pressed.R))act('tp',pressed.L?-1:1);
+   if(backP()){G.scene='pause';pressed.back=pressed.pause=false}else if(okP()){pressed.ok=pressed.light=pressed.jump=false;act(a)}
+   G.t++;return}
+  const r=oStep.apply(this,arguments);
+  if(G.scene==='play'&&P&&G.mode!=='train'){
+   if(o.god&&P.st!=='dead'){P.hp=maxHp();if(P.on)D.safe={x:P.x,y:P.y};if(P.y>RH+40&&D.safe){P.x=D.safe.x;P.y=D.safe.y;P.vx=P.vy=0}}
+   if(o.qi)P.qi=maxQi()}
+  return r};
+ // çizim
+ const draw=()=>{const it=items(),rh=13,h=it.length*rh+40,x0=W/2-130,y0=(H-h)/2;R(0,0,W,H,'rgba(0,0,0,.7)');panel(x0,y0,260,h);
+  T('GELİŞTİRİCİ MODU',W/2,y0+8,'#7fe0ff',9,'center');
+  it.forEach((t,i)=>{const y=y0+26+i*rh;Ptr.reg(x0+6,y-2,248,rh-1,()=>{G.dsel=i;pressed.ok=true},()=>{G.dsel=i});
+   if(t[0]==='tp'){Ptr.reg(x0+6,y-2,30,rh-1,()=>{G.dsel=i;pressed.L=true});Ptr.reg(x0+224,y-2,30,rh-1,()=>{G.dsel=i;pressed.R=true})}
+   const on=/AÇIK$/.test(t[1]),sel=G.dsel===i;if(sel)R(x0+6,y-2,248,rh-1,'rgba(20,90,140,.55)');
+   T((sel?'> ':'')+t[1],W/2,y,sel?'#fff':(on?'#9fe8a0':'#a89878'),8,'center')});
+  T('Yukarı/Aşağı seç · Sol/Sağ oda · Onay uygula · Geri kapat',W/2,y0+h-11,'#706858',7,'center');Ptr.back()};
+ const oR=render;render=function(){const r=oR.apply(this,arguments);const now=performance.now();fps=fps*.9+(1000/Math.max(1,now-fT))*.1;fT=now;
+  try{if(G.scene==='devmenu')menuView(draw);
+   if(G.scene==='play'||G.scene==='devmenu'){g.save();g.setTransform(S,0,0,S,0,0);
+    if(o.fps&&P){T(Math.round(fps)+' fps · '+ROOMID+' · x'+(P.x/TS).toFixed(1)+' y'+((P.y-ROY)/TS).toFixed(1),W/2,4,'#7fe0ff',7,'center')}
+    const tags=[o.god&&'ÖLÜMSÜZ',o.qi&&'SINIRSIZ Kİ',o.ohk&&'TEK VURUŞ'].filter(Boolean);if(tags.length&&G.scene==='play')T('DEV: '+tags.join(' · '),W/2,o.fps?13:4,'#ffb070',7,'center');
+    if(D.msgT>G.t)T(D.msg,W/2,G.scene==='devmenu'?H-14:H/2-60,'#ffe08a',9,'center');g.restore()}}catch(e){}
+  return r};
+ try{if(typeof LOC!=='undefined'&&LOC.D)Object.assign(LOC.D,{'Geliştirici Modu':'Developer Mode','GELİŞTİRİCİ MODU':'DEVELOPER MODE','Ölümsüzlük':'Invincibility','Sınırsız iç enerji':'Infinite inner energy','Tek vuruşta öldür':'One-hit kill','Hitbox göster':'Show hitboxes','FPS / konum bilgisi':'FPS / position info','AÇIK':'ON','kapalı':'off','Tüm stilleri aç':'Unlock all styles','Tüm ustalık yeteneklerini aç':'Unlock all mastery skills','+50 Ustalık puanı':'+50 mastery points','Can, iç enerji ve iksirleri doldur':'Refill health, energy and potions','Haritayı tamamen aç':'Reveal whole map','Işınlan':'Teleport','Odadaki düşmanları öldür':'Kill enemies in room','Bu odanın arenalarını sıfırla':"Reset this room's arenas",'Bölüm 2 başlangıcına git':'Go to Chapter 2 start','Kapat':'Close','Tüm stiller açıldı':'All styles unlocked','Tüm yetenekler açıldı':'All skills unlocked','Dolduruldu':'Refilled','Harita açıldı':'Map revealed','Yukarı/Aşağı seç · Sol/Sağ oda · Onay uygula · Geri kapat':'Up/Down select · Left/Right room · Confirm apply · Back close'})}catch(e){}
+})()}catch(err){console.error('dev',err)}
+
+</script>
 </body></html>
 
